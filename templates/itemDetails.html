@@ -1,0 +1,12 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Here is the Item Details</h4>
+
+    <!-- looping through the items and printing it description -->
+        <p>{{items.description}}</p>
+
+    <a href="{{url_for('editItem', categoryName='soccer', item_id=1)}}">Edit Item</a>
+    <a href="{{url_for('deleteItem', categoryName='soccer',item_id=1)}}">Delete</a>
+    <a href="{{url_for('allItems', categoryName=categoryName)}}">Back</a>
+{% endblock %}

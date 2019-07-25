@@ -1,0 +1,9 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Deleting a catalog</h4>
+    <p>Are you sure to delete?</p>
+    <!-- must change the url for the yes -->
+    <a href="{{url_for('index')}}">Yes</a>
+    <a href="{{url_for('index')}}">Cancel</a>
+{% endblock %}

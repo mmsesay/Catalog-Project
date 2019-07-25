@@ -1,0 +1,17 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Delete an Item items</h4>
+
+    <!-- <form action="{{url_for('createCategory', catalogName=catalogName)}}" method="POST">
+
+        <p>Input the menu name:</p>
+        <input type="text" placeholder="name" name="name">
+        <input type="text" placeholder="description" name="description">
+        <input type="text" placeholder="price" name="price">
+        <input type="text" placeholder="course" name="course"> -->
+        <!-- <input type="submit" value="Create"> -->
+
+        <a href="{{url_for('allItems', categoryName='soccer')}}">Cancel</a>
+    <!-- </form> -->
+{% endblock %}

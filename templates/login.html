@@ -1,0 +1,25 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Please Login</h4>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li><b>{{message}}</b></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form action="{{url_for('login')}}" method="POST">
+
+        <p>Input the menu name:</p>
+        <input type="text" placeholder="enter username" name="username">
+        <input type="password" placeholder="enter password" name="password">
+        <input type="submit" value="login">
+
+        <a href="{{url_for('index')}}">Cancel</a>
+    </form>
+{% endblock %}

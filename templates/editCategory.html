@@ -1,0 +1,9 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Editing a catalog</h4>
+    <p>Are you sure to delete?</p>
+    <!-- must change the url for the update -->
+    <a href="{{url_for('index')}}">Update</a>
+    <a href="{{url_for('index')}}">Cancel</a>
+{% endblock %}

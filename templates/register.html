@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Creating a new user form</h4>
+
+    <form action="{{url_for('register')}}" method="POST">
+
+        <p>Input your details:</p>
+        <input type="text" placeholder="enter username" name="username">
+        <input type="email" placeholder="enter email" name="email">
+        <input type="password" placeholder="enter password" name="password">
+        <input type="submit" value="Create">
+
+        <a href="{{url_for('index')}}">Cancel</a>
+    </form>
+{% endblock %}

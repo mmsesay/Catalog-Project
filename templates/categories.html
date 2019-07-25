@@ -1,0 +1,35 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <!-- <h4>Here are the Catalogs</h4> -->
+
+    <!-- <p>Congrats you are logged in!</p> -->
+    
+    {% if current_user.is_authenticated %}
+        <p>Welcome : {{current_user.username}}</p>
+
+        <!-- getting all the flashed messages and passing them to the messages variable -->
+        {% with messages = get_flashed_messages() %}
+            <!-- checking if their is a message -->
+            {% if messages %}
+                <ul>
+                <!-- looping through the messages and printing it out-->
+                {% for message in messages %}
+                    <li> <strong> {{ message }} </strong> </li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- adding new item -->
+        <a href="{{url_for('createItem')}}">Add New Item</a>
+
+        <!-- looping through the  categories-->
+        {% for cat in categories %}
+            <li><a href="{{url_for('allItems', categoryName='soccer')}}">{{ cat.name }}</a></li>
+        {% endfor %}
+        <!-- end of categories loop -->
+
+    {% endif %}
+
+{% endblock %}

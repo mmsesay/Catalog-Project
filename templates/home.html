@@ -1,0 +1,21 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Welcome HOME <br> Here the Categories</h4>
+
+    <!-- checking if the user is not authenticated -->
+    {% if not current_user.is_authenticated %}
+        <p>please login or regsiter</p>
+        <!-- looping through all the categories -->
+        {% for cat in categories %}
+            <li>{{ cat.name }}</li>
+        {% endfor %}
+    {% else %}
+        {% for cat in categories %}
+            <li><a href="{{url_for('allItems', categoryName=cat.name)}}">{{ cat.name }}</a></li>
+        {% endfor %}
+    {% endif %}
+    
+    
+ 
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Creating a item for category: {{categoryName}} </h4>
+
+    <form action="{{url_for('createItem', categoryName=categoryName)}}" method="POST">
+
+        <p>Input the item name and description:</p>
+        <input type="text" placeholder="name" name="name">
+        <input type="text" placeholder="description" name="description">
+        <input type="submit" value="Create">
+        <a href="{{url_for('allItems', categoryName=categoryName)}}">Cancel</a>
+    </form>
+{% endblock %}

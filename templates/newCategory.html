@@ -1,0 +1,30 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Creating a category</h4>
+    
+    {% if current_user.is_authenticated %}
+
+    <!-- assigning all the messages to the messages variable -->
+    {% with messages = get_flashed_messages() %}
+        <!-- checking if their is a message -->
+        {% if messages %}
+            <ul>
+            <!-- looping through the messages and printing it out-->
+            {% for message in messages %}
+                <li> <strong> {{ message }} </strong> </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{url_for('createCategory', user_id=current_user.id)}}" method="POST">
+
+        <p>Input the category name:</p>
+        <input type="text" placeholder="name" name="name">
+        <input type="submit" value="Create">
+        <a href="{{url_for('index')}}">Cancel</a>
+    </form>
+
+    {% endif %}
+{% endblock %}

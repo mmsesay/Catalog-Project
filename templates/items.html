@@ -1,0 +1,26 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+    <h4>Category Name: {{categoryName}} | Items</h4>
+    <!-- assigning all the messages to the messages variable -->
+    {% with messages = get_flashed_messages() %}
+        <!-- checking if their is a message -->
+        {% if messages %}
+            <ul>
+            <!-- looping through the messages and printing it out-->
+            {% for message in messages %}
+                <li> <strong> {{ message }} </strong> </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <ul>
+        {% for i in items %}
+        <li><a href="{{url_for('viewItem', categoryName=categoryName, itemName=i.name)}}">{{i.name}}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="{{url_for('createItem', categoryName=categoryName)}}">Add New Item</a>
+    <a href="{{url_for('index')}}">Back</a>
+
+{% endblock %}
