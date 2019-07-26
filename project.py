@@ -46,41 +46,44 @@ session = DBSession()
 # catalog homepage route
 @app.route('/')
 def index():
-    # fetching all the category from the database
-    categories = session.query(Category).order_by(asc(Category.name))
-    return render_template('home.html', categories=categories)
-
-# catalog homepage route
-@app.route('/categories')
-@login_required
-def categories():
-    return render_template('categories.html')
+    return render_template('home.html')
  
 # new user creation route
 @app.route('/user/register', methods = ['GET','POST'])
 def register():
     # checking if the request was a post
     if request.method == 'POST':
+
         # fetching the data from the form and storing in variables
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
 
-        # checking if the username and password is not inputted
-        if username is None or password is None:
-            flash('A username and password is required')
-            abort(400) # missing arguments
+        # is username and password are not empty
+        if username and email and password is not '':
+            
+            # check if an email is not match was False
+            if session.query(User).filter_by(email = email).first() is None:
 
-        # checking if an email already exist
-        if session.query(User).filter_by(email = email).first() is not None:
-            flash('username is already existing')
-            abort(400) # existing user
-        # storing the User data to an object 
-        user = User(username = username, email = email, password=password)
-        session.add(user)
-        session.commit()
-        flash('thanks for registering')
-        return redirect(url_for('login'))
+                # check the password length
+                if len(password) > 6:
+
+                    # storing the User data to an object 
+                    user = User(username = username, email = email, password=password)
+                    session.add(user) # adding the object
+                    session.commit() # saving the object to the database
+                    flash('thanks for registering. Please login') # flashing a successful message
+                    return redirect(url_for('login')) # redirecting the user
+
+                else:
+                    # throw error message if a password length is less than 6
+                    flash('Your password must be at least 6 characters')
+            else:
+                # throw error message if an email already exist
+                flash('username is already existing')
+        else:  
+            # throw this error message if the input fields are empty
+            flash('A username, email and password is required')
 
     # render if the request was a GET
     return render_template('register.html')
@@ -92,30 +95,34 @@ def login():
     # check if the request made is a post
     if request.method == 'POST':
         username = request.form['username']
-        u_password = request.form['password']
+        password = request.form['password']
 
-        # is username and password not present
-        if username and u_password is None:
-            flash("username and password are required")
-            abort(404)
-        else:
-            # retrieve the username
+        # is username and password are inputed
+        if username and password is not '':
+            
+            # retrieve the username and store in an object
             user = session.query(User).filter_by(username=username).first()
             
-            # verifying the user password
-            if user.verify_password(u_password) and user is not '':
+            # verifying the user password and the user object
+            if user.verify_password(password) and user is not '':
                 
                 login_user(user) # login the user
-                flash('login successfully')
+                # flash('login successfully')
 
                 # saving the requested page as next
                 next = request.args.get('next')
 
                 # if the request is none
                 if next == None or not next[0] == '/':
-                    next = url_for('categories')
+                    next = url_for('index')
                 return redirect(next) # redirecting to the prevoius or next url
-            flash("invalid username or password")
+            else:
+                # throw error if no match for username or password
+                flash("invalid username or password")
+        else:
+            # throw this error message if the username and password fields are empty
+            flash("username and password are required")
+
     # diplay if the request is  get
     return render_template('login.html')
 
@@ -143,39 +150,91 @@ def createCategory(user_id):
     # if the request is a post
     if request.method == 'POST':
         # saving the form value 
-        categoryName = request.form['name']
+        inputtedName = request.form['name']
         
-        # fetching all the categories from the db
-        allCategoryNames = session.query(Category).all()
+        # check if the form was not empty
+        if inputtedName is not '':
 
-        # looping through all the categories
-        for cat in allCategoryNames:
-            # checking if a category is already existing 
-            if cat.name == categoryName:
-                flash('Sorry \'{}\' category is already existing'.format(cat.name))
-                return render_template('newCategory.html')
-            
-            # fetching just one user_id from the user table
-            user_id = session.query(User).filter_by(id=user_id).one()
+            # fetching a single category name from the db and storing it in an object
+            fetchedCategoryName = session.query(Category).filter_by(name=inputtedName).first()
 
-            # storing the category name and the user_id 
-            category = Category(name=categoryName, user_id=user_id.id)
-            session.add(category) # adding the query
-            session.commit() # executing the query
-            flash('new category added') # flashing a successful message
-            return redirect(url_for('categories.html', categories=category)) # redirecting the user
- 
+            # check if object was an empty array
+            if fetchedCategoryName is None:
+                
+                # fetching just the login user_id from the user table
+                # user_id = session.query(User).filter_by(id=user_id).one()
+
+                # storing the category name and the user_id 
+                category = Category(name=inputtedName, user_id=user_id)
+                session.add(category) # adding the query
+                session.commit() # executing the query
+                flash('new category added') # flashing a successful message
+                return redirect(url_for('allCategories', user_id=user_id)) # redirecting the user
+
+            else:
+                # check for category name match
+                if fetchedCategoryName.name == inputtedName:
+                    flash('Sorry \'{}\' category is already existing'.format(inputtedName))
+        else:
+            flash('a category name is required')
+
     # return the template if the request was a GET 
     return render_template('newCategory.html')
 
+# catalog homepage route
+@app.route('/catalog/categories/<int:user_id>')
+@login_required
+def allCategories(user_id):
+    category = session.query(Category).filter_by(user_id=user_id)
+    return render_template('categories.html', allCats=category)
+
 # edit a category
 @app.route('/catalog/<categoryName>/edit', methods = ['GET','POST'])
+@login_required
 def editCategory(categoryName):
+
+    # if the request is a POST
+    if request.method == 'POST':
+
+        # check if the form was not empty
+        if request.form['name'] is not '':
+
+            # fetching a single category from the db and storing it in an object
+            fetchedCategoryName = session.query(Category).filter_by(name=categoryName).one()
+
+            if fetchedCategoryName.name != request.form['name']:
+
+                fetchedCategory = session.query(Category).filter_by(id=fetchedCategoryName.id).one()
+
+                # check if object name didn't match the form input name 
+                if fetchedCategory.name != request.form['name']:
+
+                    # assign the new name to fetchedCategory
+                    fetchedCategory.name = request.form['name']
+                    session.add(fetchedCategory) # saving the new category name
+                    session.commit()
+                    flash('Category \'{}\' updated to \'{}\''.format(fetchedCategory.name,request.form['name'])) # flashing a successful message
+                    return redirect(url_for('allCategories', user_id=fetchedCategory.user_id)) # redirecting the user
+            else:
+                flash('Sorry \'{}\' category is already existing. Please input another name'.format(request.form['name']))
+        else:
+            flash('a category name is required')
+
+    # return this is the request was a GET
     return render_template('editCategory.html',categoryName=categoryName)
 
 # delete a category
 @app.route('/catalog/<categoryName>/delete', methods = ['GET','POST'])
+@login_required
 def deleteCategory(categoryName):
+    # fetching a single category from the db and storing it in an object
+    fetchedCategoryName = session.query(Category).filter_by(name=categoryName).first()
+    categoryToDel = session.query(Category).filter_by(id=fetchedCategoryName.id).one()
+    if request.method == 'POST':
+        session.delete(categoryToDel)
+        session.commit()
+        flash("Category \'{}\' deleted successfully".format(categoryToDel.name))
+        return redirect(url_for('allCategories', user_id=categoryToDel.user_id)) # redirecting the user
     return render_template('deleteCategory.html', categoryName=categoryName)
 
 # all items 

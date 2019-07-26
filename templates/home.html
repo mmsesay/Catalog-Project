@@ -10,10 +10,11 @@
         {% for cat in categories %}
             <li>{{ cat.name }}</li>
         {% endfor %}
-    {% else %}
-        {% for cat in categories %}
-            <li><a href="{{url_for('allItems', categoryName=cat.name)}}">{{ cat.name }}</a></li>
-        {% endfor %}
+        {% else %}
+            <h3>Welcome: {{ current_user.username }}</h3>
+            {% for cat in categories %}
+                <li><a href="{{url_for('allItems', categoryName=cat.name)}}">{{ cat.name }}</a></li>
+            {% endfor %}
     {% endif %}
     
     

@@ -22,11 +22,16 @@
         {% endwith %}
 
         <!-- adding new item -->
-        <a href="{{url_for('createItem')}}">Add New Item</a>
-
+        <!-- <a href="{{url_for('createItem', categoryName=allCats.name)}}">Add New Item</a> -->
+        <a href="{{url_for('createCategory', user_id=current_user.id)}}">Create new category</a>
         <!-- looping through the  categories-->
-        {% for cat in categories %}
-            <li><a href="{{url_for('allItems', categoryName='soccer')}}">{{ cat.name }}</a></li>
+        {% for cat in allCats %}
+            <li>
+                <a href="{{url_for('allItems', categoryName=cat.name)}}">{{ cat.name }}</a>
+                <a href="{{url_for('editCategory', categoryName=cat.name)}}">Edit</a>
+                <a href="{{url_for('deleteCategory', categoryName=cat.name)}}">Delete</a>
+            </li>
+
         {% endfor %}
         <!-- end of categories loop -->
 

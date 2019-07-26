@@ -12,7 +12,6 @@ Base = declarative_base()
 # creating a secret key
 secret_key = ''.join(random.choice(string.ascii_uppercase + string.digits) 
 for x in range(32))
-
     
 # User Class
 class User(Base, UserMixin):

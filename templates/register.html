@@ -3,6 +3,16 @@
 {% include "header.html" %}
     <h4>Creating a new user form</h4>
 
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li><b>{{message}}</b></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
     <form action="{{url_for('register')}}" method="POST">
 
         <p>Input your details:</p>
