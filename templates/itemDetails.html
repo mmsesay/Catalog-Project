@@ -4,9 +4,11 @@
     <h4>Here is the Item Details</h4>
 
     <!-- looping through the items and printing it description -->
-        <p>{{items.description}}</p>
+    <p>ITEM NAME: {{item.name}}</p>
+    <p>ITEM DESCRIPTION: {{item.description}}</p>
+    <p>ITEM CATEGORY: {{item.category_id}}</p>
 
-    <a href="{{url_for('editItem', categoryName='soccer', item_id=1)}}">Edit Item</a>
-    <a href="{{url_for('deleteItem', categoryName='soccer',item_id=1)}}">Delete</a>
+    <a href="{{url_for('editItem', categoryName=categoryName, itemName=item.name)}}">Edit</a>
+    <a href="{{url_for('deleteItem', categoryName=categoryName, itemName=item.name)}}">Delete</a>
     <a href="{{url_for('allItems', categoryName=categoryName)}}">Back</a>
 {% endblock %}

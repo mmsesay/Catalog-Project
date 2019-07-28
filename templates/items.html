@@ -17,7 +17,10 @@
 
     <ul>
         {% for i in items %}
-        <li><a href="{{url_for('viewItem', categoryName=categoryName, itemName=i.name)}}">{{i.name}}</a></li>
+        <li>
+            <a href="{{url_for('viewItem', categoryName=categoryName, itemName=i.name)}}">{{i.name}}</a>
+    
+        </li>
         {% endfor %}
     </ul>
     <a href="{{url_for('createItem', categoryName=categoryName)}}">Add New Item</a>

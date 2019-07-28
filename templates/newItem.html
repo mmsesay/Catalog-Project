@@ -3,6 +3,16 @@
 {% include "header.html" %}
     <h4>Creating a item for category: {{categoryName}} </h4>
 
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li><b>{{message}}</b></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
     <form action="{{url_for('createItem', categoryName=categoryName)}}" method="POST">
 
         <p>Input the item name and description:</p>

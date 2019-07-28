@@ -1,17 +1,30 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-    <h4>Editing items</h4>
+    <h4>Editing item</h4>
 
-    <!-- <form action="{{url_for('createCategory', catalogName=catalogName)}}" method="POST">
+    <!-- assigning all the messages to the messages variable -->
+    {% with messages = get_flashed_messages() %}
+        <!-- checking if their is a message -->
+        {% if messages %}
+            <ul>
+            <!-- looping through the messages and printing it out-->
+            {% for message in messages %}
+                <li> <strong> {{ message }} </strong> </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{url_for('editItem', categoryName=categoryName, itemName=itemName)}}" method="POST">
 
-        <p>Input the menu name:</p>
+        <p>Input the item details to update:</p>
         <input type="text" placeholder="name" name="name">
         <input type="text" placeholder="description" name="description">
-        <input type="text" placeholder="price" name="price">
-        <input type="text" placeholder="course" name="course"> -->
-        <!-- <input type="submit" value="Create"> -->
-        <a href="{{url_for('editItem', categoryName='soccer', item_id=1)}}">Update</a>
-        <a href="{{url_for('allItems', categoryName='soccer')}}">Cancel</a>
-    <!-- </form> -->
+        <input type="text" placeholder="category" name="category">
+        <input type="submit" value="Update">
+        <!-- must change the url for the update -->
+        <a href="{{url_for('viewItem', categoryName=categoryName, itemName=itemName)}}">Cancel</a>
+    </form>
+        
 {% endblock %}

@@ -22,11 +22,11 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
 import json
+import requests
 
 # auth = HTTPBasicAuth()
 
-CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+CLIENT_ID = json.loads(open('client_secret.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "Item Catalog App"
 
 app.config['SECRET_KEY'] = 'mysecretkey'
@@ -92,6 +92,12 @@ def register():
 @app.route('/user/login', methods = ['GET','POST'])
 def login():
 
+    # generating a random string + digits as a state
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in range(32))
+    # saving that state to an array object
+    login_session['state'] = state
+
     # check if the request made is a post
     if request.method == 'POST':
         username = request.form['username']
@@ -123,8 +129,8 @@ def login():
             # throw this error message if the username and password fields are empty
             flash("username and password are required")
 
-    # diplay if the request is  get
-    return render_template('login.html')
+    # return if the request is GET and passing the current session state from login_session['state'] object
+    return render_template('login.html', STATE=state)
 
 # user logout route
 @app.route('/user/logout')
@@ -142,6 +148,92 @@ def load_user(user_id):
         flash('invalid username or password')
         abort(400)  
     return user
+
+# google sign in
+@app.route('/oauth/google', methods=['POST'])
+def googleConnect():
+    # check if request args doesn't match the login_session state
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid State Parameter'),401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # get the one time code from the server
+    code = request.data
+
+    # try to use this one time code for authentication credentials from the server
+    try:
+        # creating a flow from clients secrets and save in an object
+        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow.redirect_uri = 'postmessage' # confirm the one time code that our server is sending off
+        credentials = oauth_flow.step2_exchange(code) # exchanging the code for credentials
+    # if an error occurred during the exchange process
+    except FlowExchangeError:
+        # making a response object
+        response = make_response(json.dumps('Failed to send off the authorization code'), 401)
+        # setting the response header
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    
+    # validate the access token
+    access_token = credentials.access_token
+    url = ('https://www.googleapis.come/oauth2/v1/tokeninfo?access_token={}'.format(access_token))
+    h = httplib2.Http()
+    # storing the response to a result object
+    result = json.loads(h.request(url, 'GET')[1])
+
+    # check the result 
+    if result.get('error') is not None:
+        response = make_response(json.dumps(result.get('error')), 50)
+        response.headers ['Content-Type'] = 'application/json'
+
+    # verify the actual user
+    gplus_id = credentials.id_token['sub']
+    if result['user_id'] != gplus_id:
+        response = make_response(json.dumps('Token\'s user ID doesn\'t match with the given user ID'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    
+    # Verify that the access token is valid for this app.
+    if result['issued_to'] != CLIENT_ID:
+        response = make_response(
+            json.dumps("Token's client ID does not match app's."), 401)
+        print("Token's client ID does not match app's.")
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    stored_access_token = login_session.get('access_token')
+    stored_gplus_id = login_session.get('gplus_id')
+    if stored_access_token is not None and gplus_id == stored_gplus_id:
+        response = make_response(json.dumps('Current user is already connected.'),
+                                 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Store the access token in the session for later use.
+    login_session['access_token'] = credentials.access_token
+    login_session['gplus_id'] = gplus_id
+
+    # Get user info
+    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    params = {'access_token': credentials.access_token, 'alt': 'json'}
+    answer = requests.get(userinfo_url, params=params)
+
+    data = answer.json()
+
+    login_session['username'] = data['name']
+    login_session['picture'] = data['picture']
+    login_session['email'] = data['email']
+
+    output = ''
+    output += '<h1>Welcome, '
+    output += login_session['username']
+    output += '!</h1>'
+    output += '<img src="'
+    output += login_session['picture']
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    flash("you are now logged in as %s" % login_session['username'])
+    return output
 
 # create a new category
 @app.route('/catalog/category/new/<int:user_id>', methods = ['GET','POST'])
@@ -203,7 +295,7 @@ def editCategory(categoryName):
             fetchedCategoryName = session.query(Category).filter_by(name=categoryName).one()
 
             if fetchedCategoryName.name != request.form['name']:
-
+                # to fix 
                 fetchedCategory = session.query(Category).filter_by(id=fetchedCategoryName.id).one()
 
                 # check if object name didn't match the form input name 
@@ -249,36 +341,34 @@ def allItems(categoryName):
 def createItem(categoryName):
     # if the request is a POST
     if request.method == 'POST':
+
         # storing the form values
         itemName = request.form['name']
         itemDescription = request.form['description']
 
-        # fetching all the items from the db
-        allItems = session.query(Items).all()
-        # fetching one category from the db
-        cat = session.query(Category).filter_by(name=categoryName).one()
+        # check if the form was not empty
+        if itemName and itemDescription is not '':
 
-        # looping through all the categories
-        for i in allItems:
-            # if the object (i) was empty
-            if i is None:
-                return render_template('newItem.html', categoryName=categoryName)
-            else:
-                # checking if a category is already existing 
-                if i.name == itemName:
-                    flash('The Item \'{}\' is already existing'.format(i.name))
-                    return render_template('newItem.html', categoryName=categoryName)
+            # fetching a single category name from the db and storing it in an object
+            fetchedCategory = session.query(Category).filter_by(name=categoryName).one()
 
-                # fetching just one user_id from the user table
-                # category_id = session.query(Category).filter_by(category_id=categoryName.id).one()
+            # fetching a single item name from the db and storing it in an object
+            fetchedItem = session.query(Items).filter_by(name=itemName).first()
+
+            # check if object name doesn't match the form name
+            if fetchedItem.name != itemName:
                 
                 # storing the item_name, item_description and the category_id 
-                item = Items(name=itemName, description=itemDescription, category_id=cat.id)
+                item = Items(name=itemName, description=itemDescription, category_id=fetchedCategory.id)
                 session.add(item) # adding the query
                 session.commit() # executing the query
                 flash('new item added') # flashing a successful message
-
                 return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
+
+            else:
+                flash('The Item \'{}\' is already existing'.format(fetchedItem.name))
+        else:
+            flash('an item name and description is required')
 
     # render the template if the request was a GET        
     return render_template('newItem.html', categoryName=categoryName)
@@ -288,18 +378,70 @@ def createItem(categoryName):
 def viewItem(categoryName,itemName):
     # fetching just one category from the Category DB where the name matches categoryName
     item = session.query(Items).filter_by(name=itemName).one()
-    # item = session.query(Items).filter_by(category_id=cat.id)
-    return render_template('itemDetails.html', categoryName=categoryName, items=item)
+    return render_template('itemDetails.html', categoryName=categoryName, item=item)
 
 # edit item for a category
-@app.route('/catalog/<categoryName>/<int:item_id>/edit', methods = ['GET','POST'])
-def editItem(categoryName, item_id):
-    return render_template('editItem.html',categoryName=categoryName,item_id=item_id)
+@app.route('/catalog/<categoryName>/<itemName>/edit', methods = ['GET','POST'])
+def editItem(categoryName, itemName):
+    # if the request is a POST
+    if request.method == 'POST':
+
+        # storing the form values 
+        formItemName = request.form['name']
+        formItemDescription = request.form['description']
+        formItemCategory = request.form['category']
+
+        # check if the form was not empty
+        if formItemName and formItemDescription and formItemCategory is not '':
+
+            # fetching a single category from the db and storing it in an object
+            fetchedSingleItem = session.query(Items).filter_by(name=itemName).one()
+            fetchedCategory = session.query(Category).filter_by(name=formItemCategory).one()
+
+            # check if the form name doesn't match the fetchedSingleItem name
+            if fetchedSingleItem.name != formItemName:
+
+                # fetching the id of the fetchedSingleItem
+                fetchedItem = session.query(Items).filter_by(id=fetchedSingleItem.id).one()
+                # fetching the id of the category
+                fetchedCategoryId = session.query(Category).filter_by(id=fetchedCategory.id).one()
+
+                # check if the object isn't empty
+                if fetchedItem is not '':
+                    # assign the new name to fetchedItem
+                    fetchedItem.name = formItemName
+                    fetchedItem.description = formItemDescription 
+                    fetchedItem.category_id = fetchedCategoryId.id # updating the category
+                    session.add(fetchedItem) # saving the new category name
+                    session.commit()
+                    flash('Item \'{}\' updated to \'{}\''.format(fetchedSingleItem.name, formItemName)) # flashing a successful message
+                    return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
+
+            else:
+                flash('Sorry an \'{}\' item is already existing. Please input another name'.format(request.form['name']))
+        else:
+            flash('an item name, description and category name is required')
+
+    # return if the request was a GET
+    return render_template('editItem.html', categoryName=categoryName,itemName=itemName)
 
 # delete an item from a category
-@app.route('/catalog/<categoryName>/<int:item_id>/delete', methods = ['GET','POST'])
-def deleteItem(categoryName, item_id):
-    return render_template('deleteItem.html',categoryName=categoryName,item_id=item_id)
+@app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])
+def deleteItem(categoryName, itemName):
+    # fetching a single item from the db and storing it in an object
+    fetchedItem = session.query(Items).filter_by(name=itemName).one()
+    # fetching the item id
+    itemToDel = session.query(Items).filter_by(id=fetchedItem.id).one()
+
+    # check if the request was a POST
+    if request.method == 'POST':
+        session.delete(itemToDel) # staging the item to delete
+        session.commit() # commiting the query
+        flash("Item \'{}\' deleted successfully".format(itemToDel.name))
+        return redirect(url_for('allItems', categoryName=categoryName)) 
+    
+    # return this template if the request was a GET
+    return render_template('deleteItem.html',categoryName=categoryName,item=fetchedItem)
 
 if __name__=="__main__":
     app.debug = True
