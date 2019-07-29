@@ -1,18 +1,28 @@
-<div class="row top-menu">
-	<div class="col-md-6">
-		<a href="{{url_for('index')}}">Home</a>
+<div class="header-nav">
 
-		<!-- check if the user is authenticated -->
-		{% if current_user.is_authenticated %}
-			<a href="{{url_for('allCategories', user_id=current_user.id)}}">View Category</a>
-			
-			<a href="{{url_for('logout')}}">Logout</a>
-		{% else %}
-			<a href="{{url_for('login')}}">Login</a>
-			
-			<a href="{{url_for('register')}}">Signup</a>
-			
-    	{% endif %}
+	<ul class="flex items-center flex-wrap bg-blue-400 p-5 ml-24 mr-24">
+		<a href="#" class="text-2xl p-4">Item Catalog</a>
+		<li class="mx-auto">
+			<li class="mr-3">
+				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('index')}}">Home</a>
+			</li>
+			<!-- check if the user is authenticated -->
+			{% if current_user.is_authenticated %}
+			<li class="mr-3">
+				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('allCategories', user_id=current_user.id)}}">View Category</a>
+			</li>
+			<li class="mr-3">
+				<a class="inline-block border border-white text-xl rounded hover:border-pink-700 text-white hover:bg-pink-700 py-1 px-3" href="{{url_for('logout')}}">Logout</a>
+			</li>
+			{% else %}
+			<li class="mr-3">
+				<a class="inline-block border border-white text-xl rounded hover:border-pink-700 text-white hover:bg-pink-700 py-1 px-3" href="{{url_for('login')}}">Login</a>
+			</li>
+			<li class="mr-3">
+				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('register')}}">Sign Up</a>
+			</li>
+			{% endif %}
+		</li>
+	</ul>
 
-	</div>
 </div>

@@ -1,11 +1,11 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-    <h4>Welcome HOME <br> Here the Categories</h4>
+    <h4 class="text-center text-2xl p-5">Welcome to the Item Catalog</h4>
 
     <!-- checking if the user is not authenticated -->
     {% if not current_user.is_authenticated %}
-        <p>please login or regsiter</p>
+        <p class="text-center text-sm p-3">please login or regsiter</p>
         <!-- looping through all the categories -->
         {% for cat in categories %}
             <li>{{ cat.name }}</li>

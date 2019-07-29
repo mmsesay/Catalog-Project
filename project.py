@@ -72,7 +72,7 @@ def register():
                     user = User(username = username, email = email, password=password)
                     session.add(user) # adding the object
                     session.commit() # saving the object to the database
-                    flash('thanks for registering. Please login') # flashing a successful message
+                    flash('Thanks for signing up. Please login') # flashing a successful message
                     return redirect(url_for('login')) # redirecting the user
 
                 else:
@@ -356,7 +356,7 @@ def createItem(categoryName):
             fetchedItem = session.query(Items).filter_by(name=itemName).first()
 
             # check if object name doesn't match the form name
-            if fetchedItem.name != itemName:
+            if fetchedItem == None :
                 
                 # storing the item_name, item_description and the category_id 
                 item = Items(name=itemName, description=itemDescription, category_id=fetchedCategory.id)

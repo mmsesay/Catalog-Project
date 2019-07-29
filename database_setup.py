@@ -67,8 +67,7 @@ class Category(Base):
        return {
            'id': self.id,
            'name': self.name,
-           'description': self.description
-           
+           'description': self.description  
        }
 
 
