@@ -46,7 +46,8 @@ session = DBSession()
 # catalog homepage route
 @app.route('/')
 def index():
-    return render_template('home.html')
+    categories= session.query(Category).all()
+    return render_template('home.html', categories=categories)
  
 # new user creation route
 @app.route('/user/register', methods = ['GET','POST'])
@@ -275,7 +276,6 @@ def createCategory(user_id):
 
 # catalog homepage route
 @app.route('/catalog/categories/<int:user_id>')
-@login_required
 def allCategories(user_id):
     category = session.query(Category).filter_by(user_id=user_id)
     return render_template('categories.html', allCats=category)
@@ -338,6 +338,7 @@ def allItems(categoryName):
 
 # create a new item for a category
 @app.route('/catalog/<categoryName>/item/new', methods = ['GET','POST'])
+@login_required
 def createItem(categoryName):
     # if the request is a POST
     if request.method == 'POST':
@@ -362,7 +363,7 @@ def createItem(categoryName):
                 item = Items(name=itemName, description=itemDescription, category_id=fetchedCategory.id)
                 session.add(item) # adding the query
                 session.commit() # executing the query
-                flash('new item added') # flashing a successful message
+                flash('New item added') # flashing a successful message
                 return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
 
             else:
@@ -374,7 +375,7 @@ def createItem(categoryName):
     return render_template('newItem.html', categoryName=categoryName)
 
 # specific item route
-@app.route('/catalog/<categoryName>/<itemName>', methods = ['GET'])
+@app.route('/catalog/<categoryName>/<itemName>')
 def viewItem(categoryName,itemName):
     # fetching just one category from the Category DB where the name matches categoryName
     item = session.query(Items).filter_by(name=itemName).one()
@@ -382,6 +383,7 @@ def viewItem(categoryName,itemName):
 
 # edit item for a category
 @app.route('/catalog/<categoryName>/<itemName>/edit', methods = ['GET','POST'])
+@login_required
 def editItem(categoryName, itemName):
     # if the request is a POST
     if request.method == 'POST':
@@ -427,6 +429,7 @@ def editItem(categoryName, itemName):
 
 # delete an item from a category
 @app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])
+@login_required
 def deleteItem(categoryName, itemName):
     # fetching a single item from the db and storing it in an object
     fetchedItem = session.query(Items).filter_by(name=itemName).one()

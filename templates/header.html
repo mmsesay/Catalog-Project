@@ -1,7 +1,7 @@
 <div class="header-nav">
 
 	<ul class="flex items-center flex-wrap bg-blue-400 p-5 ml-24 mr-24">
-		<a href="#" class="text-2xl p-4">Item Catalog</a>
+		<a href="{{url_for('index')}}" class="text-white text-2xl p-4">Item Catalog</a>
 		<li class="mx-auto">
 			<li class="mr-3">
 				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('index')}}">Home</a>
@@ -9,7 +9,7 @@
 			<!-- check if the user is authenticated -->
 			{% if current_user.is_authenticated %}
 			<li class="mr-3">
-				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('allCategories', user_id=current_user.id)}}">View Category</a>
+				<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('allCategories', user_id=current_user.id)}}">All Categories</a>
 			</li>
 			<li class="mr-3">
 				<a class="inline-block border border-white text-xl rounded hover:border-pink-700 text-white hover:bg-pink-700 py-1 px-3" href="{{url_for('logout')}}">Logout</a>
