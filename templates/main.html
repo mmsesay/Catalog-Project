@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		
+		<meta name="google-signin-client_id" content="633581098598-sltt0ggeg10q0889jcvr0h1i9akut87i.apps.googleusercontent.com">
 		<link rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css">
 	
 		<link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
@@ -9,16 +9,11 @@
 		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"> -->
 		<link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}">
 
-	
-		<script>
-			gapi.load('auth2', function() {
-				auth2 = gapi.auth2.init({
-				client_id: '633581098598-s0nnrekmj814g6nlgbjv9fpkb5hrpkkj.apps.googleusercontent.com',
-				// Scopes to request in addition to 'profile' and 'email'
-				//scope: 'additional_scope'
-				});
-			});
-		</script>
+		<!-- <script src="https://apis.google.com/js/platform.js" async defer></script> -->
+		<script src="https://apis.google.com/js/platform.js?onload=init" async defer></script>
+		
+		
+		
 		<!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
 	
 	</head>

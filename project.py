@@ -98,6 +98,9 @@ def login():
                     for x in range(32))
     # saving that state to an array object
     login_session['state'] = state
+    login_session['provider'] = 'google'
+    # login_session['gplus_id'] = gplus_id
+    # login_session['credentials'] = credentials
 
     # check if the request made is a post
     if request.method == 'POST':
@@ -121,7 +124,7 @@ def login():
 
                 # if the request is none
                 if next == None or not next[0] == '/':
-                    next = url_for('index')
+                    next = url_for('allCategories', user_id=user.id)
                 return redirect(next) # redirecting to the prevoius or next url
             else:
                 # throw error if no match for username or password
@@ -151,90 +154,198 @@ def load_user(user_id):
     return user
 
 # google sign in
-@app.route('/oauth/google', methods=['POST'])
-def googleConnect():
+# @app.route('/oauth/google', methods=['POST'])
+# def googleConnect():
+
+    # if provi
+
+
+    # check if request args doesn't match the login_session state
+    # if request.args.get('state') != login_session['state']:
+    #     response = make_response(json.dumps('Invalid State Parameter'),401)
+    #     response.headers['Content-Type'] = 'application/json'
+    #     return response
+
+    # # get the one time code from the server
+    # code = request.data
+
+    # # try to use this one time code for authentication credentials from the server
+    # try:
+    #     # creating a flow from clients secrets and save in an object
+    #     oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+    #     oauth_flow.redirect_uri = 'postmessage' # confirm the one time code that our server is sending off
+    #     credentials = oauth_flow.step2_exchange(code) # exchanging the code for credentials
+    # # if an error occurred during the exchange process
+    # except FlowExchangeError:
+    #     # making a response object
+    #     response = make_response(json.dumps('Failed to send off the authorization code'), 401)
+    #     # setting the response header
+    #     response.headers['Content-Type'] = 'application/json'
+    #     return response
+    
+    # # validate the access token
+    # access_token = credentials.access_token
+    # url = ('https://www.googleapis.come/oauth2/v1/tokeninfo?access_token={}'.format(access_token))
+    # h = httplib2.Http()
+    # # storing the response to a result object
+    # result = json.loads(h.request(url, 'GET')[1])
+
+    # # check the result 
+    # if result.get('error') is not None:
+    #     response = make_response(json.dumps(result.get('error')), 500)
+    #     response.headers ['Content-Type'] = 'application/json'
+
+    # # verify the actual user
+    # gplus_id = credentials.id_token['sub']
+    # if result['user_id'] != gplus_id:
+    #     response = make_response(json.dumps('Token\'s user ID doesn\'t match with the given user ID'), 401)
+    #     response.headers['Content-Type'] = 'application/json'
+    #     return response
+    
+    # # Verify that the access token is valid for this app.
+    # if result['issued_to'] != CLIENT_ID:
+    #     response = make_response(
+    #         json.dumps("Token's client ID does not match app's."), 401)
+    #     print("Token's client ID does not match app's.")
+    #     response.headers['Content-Type'] = 'application/json'
+    #     return response
+
+    # stored_credentials = login_session.get('credentials')
+    # stored_gplus_id = login_session.get('gplus_id')
+    # if stored_credentials is not None and gplus_id == stored_gplus_id:
+    #     response = make_response(json.dumps('Current user is already connected.'),
+    #                              200)
+    #     response.headers['Content-Type'] = 'application/json'
+    #     return response
+
+    # # Store the access token in the session for later use.
+    # login_session['credentials'] = credentials
+    # login_session['gplus_id'] = gplus_id
+
+    # # Get user info
+    # userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    # params = {'access_token': credentials.access_token, 'alt': 'json'}
+    # answer = requests.get(userinfo_url, params=params)
+
+    # data = json.loads(answer.txt)
+
+    # login_session['username'] = data['name']
+    # login_session['picture'] = data['picture']
+    # login_session['email'] = data['email']
+
+    # output = ''
+    # output += '<h1>Welcome, '
+    # output += login_session['username']
+    # output += '!</h1>'
+    # output += '<img src="'
+    # output += login_session['picture']
+    # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    # flash("you are now logged in as %s" % login_session['username'])
+    # return output
+
+# google disconection
+@app.route('/gdisconnect')
+def gdisconnect():
+    access_token = login_session.get('access_token')
+    if access_token is None:
+        print('Access Token is None')
+        response = make_response(json.dumps('Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    print('In gdisconnect access token is %s', access_token)
+    print('User name is: ')
+    print(login_session['username'])
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+    print('result is ')
+    print(result)
+    if result['status'] == '200':
+        del login_session['access_token']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        response = make_response(json.dumps('Successfully disconnected.'), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    else:
+        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+@app.route('/fbconnect', methods=['POST'])
+def fbConnect():
     # check if request args doesn't match the login_session state
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid State Parameter'),401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    # get the one time code from the server
-    code = request.data
+    access_token = request.data
 
-    # try to use this one time code for authentication credentials from the server
-    try:
-        # creating a flow from clients secrets and save in an object
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
-        oauth_flow.redirect_uri = 'postmessage' # confirm the one time code that our server is sending off
-        credentials = oauth_flow.step2_exchange(code) # exchanging the code for credentials
-    # if an error occurred during the exchange process
-    except FlowExchangeError:
-        # making a response object
-        response = make_response(json.dumps('Failed to send off the authorization code'), 401)
-        # setting the response header
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    
-    # validate the access token
-    access_token = credentials.access_token
-    url = ('https://www.googleapis.come/oauth2/v1/tokeninfo?access_token={}'.format(access_token))
+    app_id = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_id']
+    app_secret = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_secret']
+    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (app_id, app_secret, access_token)
     h = httplib2.Http()
-    # storing the response to a result object
-    result = json.loads(h.request(url, 'GET')[1])
+    result = h.result(url, 'GET')[1]
 
-    # check the result 
-    if result.get('error') is not None:
-        response = make_response(json.dumps(result.get('error')), 50)
-        response.headers ['Content-Type'] = 'application/json'
+    # use token to get user info from api
+    userinfo_url = "https://graph.facebook.com/v2.8/me"
+    # strip expire tag from access token
+    token = result.split("&")[0]
 
-    # verify the actual user
-    gplus_id = credentials.id_token['sub']
-    if result['user_id'] != gplus_id:
-        response = make_response(json.dumps('Token\'s user ID doesn\'t match with the given user ID'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    
-    # Verify that the access token is valid for this app.
-    if result['issued_to'] != CLIENT_ID:
-        response = make_response(
-            json.dumps("Token's client ID does not match app's."), 401)
-        print("Token's client ID does not match app's.")
-        response.headers['Content-Type'] = 'application/json'
-        return response
+    url = "https://graph.facebook.com/v2.8/me?access_token=%s&fields=name,id,email' % token"
+    h = httplib2.Http()
+    result = h.result(url, 'GET')[1]
 
-    stored_access_token = login_session.get('access_token')
-    stored_gplus_id = login_session.get('gplus_id')
-    if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
-    # Store the access token in the session for later use.
-    login_session['access_token'] = credentials.access_token
-    login_session['gplus_id'] = gplus_id
-
-    # Get user info
-    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt': 'json'}
-    answer = requests.get(userinfo_url, params=params)
-
-    data = answer.json()
-
+    data = json.loads(result)
+    login_session['provider'] = 'facebook'
     login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    return output
+    # see if the user exists
+    user_id = getUserID(login_session['username'])
+    if not user_id:
+        user_id = createUser(login_session)
+        login_session['user_id'] = user_id
+
+        output = ''
+        output += '<h1>Welcome</h1>'
+        output += login_session['username']
+
+@app.route('/fbdisconnect')
+def fbdisconnect():
+    facebook_id = login_session['facebook_id']
+    url = 'https://graph.facebook.com/%s/permissions' % facebook_id
+    h = httplib2.Http()
+    result = h.request(url, 'DELETE')[1]
+    del login_session['username']
+    del login_session['email']
+    del login_session['facebook_id']
+    return "you have been logged out"
+
+@app.route('/disconnect')
+def disconnect():
+    if 'provider' in login_session:
+        if login_session['provider'] == 'google':
+            gdisconnect()
+            del login_session['g_id']
+            del login_session['credentials']
+        if login_session['provider'] == 'facebook':
+            fbdisconnect()
+            del login_session['facebook_id']
+
+        del login_session['username']
+        del login_session['email']
+        del login_session['user_id']
+        del login_session['provider']
+
+        flash("you have successfully been logged out")
+        return redirect(url_for('index'))
+    else:
+        flash("you were not logged in")
+        redirect(url_for('index'))
 
 # create a new category
 @app.route('/catalog/category/new/<int:user_id>', methods = ['GET','POST'])
@@ -305,7 +416,7 @@ def editCategory(categoryName):
                     fetchedCategory.name = request.form['name']
                     session.add(fetchedCategory) # saving the new category name
                     session.commit()
-                    flash('Category \'{}\' updated to \'{}\''.format(fetchedCategory.name,request.form['name'])) # flashing a successful message
+                    flash('Category \'{}\' updated to \'{}\''.format(categoryName,request.form['name'])) # flashing a successful message
                     return redirect(url_for('allCategories', user_id=fetchedCategory.user_id)) # redirecting the user
             else:
                 flash('Sorry \'{}\' category is already existing. Please input another name'.format(request.form['name']))
@@ -332,7 +443,7 @@ def deleteCategory(categoryName):
 # all items 
 @app.route('/catalog/<categoryName>/items')
 def allItems(categoryName):
-    cat = session.query(Category).filter_by(name=categoryName).one()
+    cat = session.query(Category).filter_by(name=categoryName).first()
     items = session.query(Items).filter_by(category_id=cat.id)
     return render_template('items.html', categoryName=categoryName, items=items) 
 
@@ -385,6 +496,7 @@ def viewItem(categoryName,itemName):
 @app.route('/catalog/<categoryName>/<itemName>/edit', methods = ['GET','POST'])
 @login_required
 def editItem(categoryName, itemName):
+
     # if the request is a POST
     if request.method == 'POST':
 
@@ -410,13 +522,14 @@ def editItem(categoryName, itemName):
 
                 # check if the object isn't empty
                 if fetchedItem is not '':
+                    
                     # assign the new name to fetchedItem
                     fetchedItem.name = formItemName
                     fetchedItem.description = formItemDescription 
                     fetchedItem.category_id = fetchedCategoryId.id # updating the category
                     session.add(fetchedItem) # saving the new category name
                     session.commit()
-                    flash('Item \'{}\' updated to \'{}\''.format(fetchedSingleItem.name, formItemName)) # flashing a successful message
+                    flash('Item \'{}\' updated to \'{}\''.format(itemName, formItemName)) # flashing a successful message
                     return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
 
             else:
@@ -425,7 +538,7 @@ def editItem(categoryName, itemName):
             flash('an item name, description and category name is required')
 
     # return if the request was a GET
-    return render_template('editItem.html', categoryName=categoryName,itemName=itemName)
+    return render_template('editItem.html', categoryName=categoryName, itemName=itemName)
 
 # delete an item from a category
 @app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])

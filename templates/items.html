@@ -2,8 +2,8 @@
 {% block content %}
 {% include "header.html" %}
     <h4 class="ml-48 text-gray-500 p-5 text-2xl">Category Name: {{categoryName}} | Items</h4>
-    <!-- assigning all the messages to the messages variable -->
-    <!-- getting the flsh message -->
+
+    <!-- getting the flash message -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
@@ -18,8 +18,10 @@
 
     {% if current_user.is_authenticated %}
         <div class="mb-10">
-            <a class="ml-48 inline-block border border-white text-xl rounded hover:bg-teal-500 text-white py-1 px-3" href="{{url_for('createItem', categoryName=categoryName)}}">Add New Item</a>
-            <a class="ml-10 inline-block border border-white text-xl rounded hover:bg-blue-400 text-white py-1 px-3" href="{{url_for('index')}}">Back</a>
+            <a class="ml-48 inline-block border border-white text-xl rounded hover:bg-teal-500 text-white py-1 px-3" 
+                href="{{url_for('createItem', categoryName=categoryName)}}">Add New Item</a>
+            <a class="ml-10 inline-block border border-white text-xl rounded hover:bg-blue-400 text-white py-1 px-3" 
+                href="{{url_for('allCategories', user_id=current_user.id)}}">Back</a>
         </div>
     {% endif %}
 

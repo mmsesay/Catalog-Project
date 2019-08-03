@@ -1,10 +1,9 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-    <h4 class="text-center text-pink-500 p-5 text-2xl">Creating a item for category: {{categoryName}} </h4>
+    <h4 class="text-center text-gray-500 p-5 text-2xl">Creating a item for category: {{categoryName}} </h4>
 
      <!-- NEW ITEM FORM -->
-
      <div class="w-full max-w-sm mx-auto m-8">
             <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" action="{{url_for('createItem', categoryName=categoryName)}}" method="POST">
                 
@@ -30,7 +29,8 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
                     Description
                 </label>
-                <input class="shadow appearance-none border border-red-500 rounded w-full py-2 px-2 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="description" name="description" type="text" placeholder="Item Description">
+                <textarea class="shadow appearance-none resize-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="description" name="description" type="text" placeholder="Enter item description here."></textarea>
                 </div>
                 <div class="flex items-center justify-between">
                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 ml-10 rounded focus:outline-none focus:shadow-outline" type="submit">
