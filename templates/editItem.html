@@ -5,7 +5,7 @@
 
     <div class="w-full max-w-sm mx-auto m-8">
         <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" 
-            action="{{url_for('editItem', categoryName=categoryName, itemName=itemName)}}" 
+            action="{{url_for('editItem', categoryName=categoryName, itemName=item.name)}}" 
             method="POST">
             
             <!-- getting the flsh message -->
@@ -24,21 +24,21 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
                     Name
                 </label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="name" name="name" type="text" placeholder="edit: {{itemName}}">
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="name" name="name" type="text" placeholder="edit: {{item.name}}">
             </div>
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
                     Description
                 </label>
                 <textarea class="shadow appearance-none resize-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="description" name="description" type="text" placeholder="enter description here. Leave if you wish not to edit"></textarea>
+                id="description" name="description" type="text" placeholder="{{ item.description }}"></textarea>
             </div>
-            <div class="mb-4">
+            <!-- <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="category">
                     Category
                 </label>
                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="category" name="category" type="text" placeholder="{{categoryName}}">
-            </div>
+            </div> -->
             <div class="flex items-center justify-between">
                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 ml-10 rounded focus:outline-none focus:shadow-outline" type="submit">
                     Update

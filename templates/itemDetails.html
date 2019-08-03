@@ -1,12 +1,8 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-<h4 class="text-center text-gray-500 p-5 text-2xl">Item {{item.name}} Details </h4>
 
-    <!-- looping through the items and printing it description -->
-    <!-- <p>ITEM NAME: </p>
-    <p>ITEM DESCRIPTION: {{item.description}}</p>
-    <p>ITEM CATEGORY: {{item.category_id}}</p> -->
+    <h4 class="text-center text-gray-500 p-5 text-2xl">Item {{item.name}} Details </h4>
 
     <div class="bg-white border-t-4 border-blue-500 rounded-b text-teal-900 ml-48 mr-48 px-4 py-3 shadow-md" role="alert">
         <div class="flex">
@@ -17,6 +13,8 @@
             </div>
             
         </div>
+
+        <!-- check if the user is authenticated and has authorization to perform operations on this item-->
         {% if current_user.is_authenticated and current_user.id == authUser.user_id %}
             <div class="m-12">
                 <a class="ml-4 inline-block border border-white text-xl rounded-full hover:bg-orange-700 bg-orange-500 text-white py-1 px-3" 
@@ -28,8 +26,5 @@
             </div>
         {% endif %}
     </div>
-
-    
-
     
 {% endblock %}

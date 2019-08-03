@@ -43,6 +43,32 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+
+# all category api endpoint
+@app.route('/catalog/categories/JSON')
+def categoryJSON():
+	allCategory = session.query(Category).all()
+	return jsonify(Categories=[cat.serialize for cat in allCategory])
+
+# all items api endpoint
+@app.route('/catalog/items/JSON')
+def ItemsJSON():
+	allItems = session.query(Items).all()
+	return jsonify(Items=[i.serialize for i in allItems])
+
+# all items under a specific category api endpoint
+@app.route('/catalog/<categoryName>/JSON')
+def specificCategoryJSON(categoryName):
+    oneCat = session.query(Category).filter_by(name=categoryName).one()
+    items = session.query(Items).filter_by(category_id = oneCat.id).all()
+    return jsonify(items=[i.serialize for i in items])
+
+# single item under a specific category api endpoint
+@app.route('/catalog/<categoryName>/<itemName>/JSON')
+def specificItemJSON(categoryName,itemName):
+    oneItem = session.query(Items).filter_by(name=itemName).one()
+    return jsonify(item=oneItem.serialize)
+
 # catalog homepage route
 @app.route('/')
 def index():
@@ -498,48 +524,38 @@ def viewItem(categoryName,itemName):
 @login_required
 def editItem(categoryName, itemName):
 
+    # fetching a single category from the db and storing it in an object
+    fetItem = session.query(Items).filter_by(name=itemName).one()
+
     # if the request is a POST
     if request.method == 'POST':
 
         # storing the form values 
         formItemName = request.form['name']
         formItemDescription = request.form['description']
-        formItemCategory = request.form['category']
 
         # check if the form was not empty
-        if formItemName and formItemDescription and formItemCategory is not '':
+        if formItemName and formItemDescription is not '':
 
             # fetching a single category from the db and storing it in an object
             fetchedSingleItem = session.query(Items).filter_by(name=itemName).one()
-            fetchedCategory = session.query(Category).filter_by(name=formItemCategory).one()
 
-            # check if the form name doesn't match the fetchedSingleItem name
-            if fetchedSingleItem.name != formItemName:
-
-                # fetching the id of the fetchedSingleItem
-                fetchedItem = session.query(Items).filter_by(id=fetchedSingleItem.id).one()
-                # fetching the id of the category
-                fetchedCategoryId = session.query(Category).filter_by(id=fetchedCategory.id).one()
-
-                # check if the object isn't empty
-                if fetchedItem is not '':
-                    
-                    # assign the new name to fetchedItem
-                    fetchedItem.name = formItemName
-                    fetchedItem.description = formItemDescription 
-                    fetchedItem.category_id = fetchedCategoryId.id # updating the category
-                    session.add(fetchedItem) # saving the new category name
-                    session.commit()
-                    flash('Item \'{}\' updated to \'{}\''.format(itemName, formItemName)) # flashing a successful message
-                    return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
-
-            else:
-                flash('Sorry an \'{}\' item is already existing. Please input another name'.format(request.form['name']))
+            # fetching the id of that fetchedSingleItem
+            fetchedItem = session.query(Items).filter_by(id=fetchedSingleItem.id).one()
+     
+            # assign the new name to fetchedItem
+            fetchedItem.name = formItemName
+            fetchedItem.description = formItemDescription 
+            session.add(fetchedItem) # saving the new category name
+            session.commit()
+            flash('Item \'{}\' updated'.format(itemName)) # flashing a successful message
+            return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
+        
         else:
             flash('an item name, description and category name is required')
 
     # return if the request was a GET
-    return render_template('editItem.html', categoryName=categoryName, itemName=itemName)
+    return render_template('editItem.html', categoryName=categoryName, item=fetItem)
 
 # delete an item from a category
 @app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])

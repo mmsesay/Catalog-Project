@@ -1,7 +1,6 @@
 {% extends "main.html" %}
 {% block content %}
 {% include "header.html" %}
-    <!-- <h4>Here are the Catalogs</h4> -->
     
     {% if current_user.is_authenticated %}
         <!-- adding new item -->
@@ -29,7 +28,6 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         
         <!-- looping through the  categories-->
         {% for cat in allCats %}
