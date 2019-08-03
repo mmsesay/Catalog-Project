@@ -445,7 +445,7 @@ def deleteCategory(categoryName):
 def allItems(categoryName):
     cat = session.query(Category).filter_by(name=categoryName).first()
     items = session.query(Items).filter_by(category_id=cat.id)
-    return render_template('items.html', categoryName=categoryName, items=items) 
+    return render_template('items.html', categoryName=categoryName, items=items, authUser=cat) 
 
 # create a new item for a category
 @app.route('/catalog/<categoryName>/item/new', methods = ['GET','POST'])
@@ -474,7 +474,7 @@ def createItem(categoryName):
                 item = Items(name=itemName, description=itemDescription, category_id=fetchedCategory.id)
                 session.add(item) # adding the query
                 session.commit() # executing the query
-                flash('New item added') # flashing a successful message
+                flash('New item \" {} \" added'.format(item.name)) # flashing a successful message
                 return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
 
             else:
@@ -488,9 +488,10 @@ def createItem(categoryName):
 # specific item route
 @app.route('/catalog/<categoryName>/<itemName>')
 def viewItem(categoryName,itemName):
+    cat = session.query(Category).filter_by(name=categoryName).one()
     # fetching just one category from the Category DB where the name matches categoryName
     item = session.query(Items).filter_by(name=itemName).one()
-    return render_template('itemDetails.html', categoryName=categoryName, item=item)
+    return render_template('itemDetails.html', categoryName=categoryName, item=item, authUser=cat)
 
 # edit item for a category
 @app.route('/catalog/<categoryName>/<itemName>/edit', methods = ['GET','POST'])

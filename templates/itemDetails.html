@@ -17,7 +17,7 @@
             </div>
             
         </div>
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated and current_user.id == authUser.user_id %}
             <div class="m-12">
                 <a class="ml-4 inline-block border border-white text-xl rounded-full hover:bg-orange-700 bg-orange-500 text-white py-1 px-3" 
                     href="{{url_for('editItem', categoryName=categoryName, itemName=item.name)}}">Edit</a>

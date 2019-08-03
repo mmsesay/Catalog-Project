@@ -2,13 +2,8 @@
 {% block content %}
 {% include "header.html" %}
     <!-- <h4>Here are the Catalogs</h4> -->
-
-    <!-- <p>Congrats you are logged in!</p> -->
     
     {% if current_user.is_authenticated %}
-        <!-- <p>Welcome : {{current_user.username}}</p> -->
-
-        
         <!-- adding new item -->
         <div class="mt-10 mb-10">
             <a class="ml-48 inline-block border border-white text-xl rounded hover:bg-teal-500 text-white py-1 px-3" href="{{url_for('createCategory', user_id=current_user.id)}}">Create new category</a>

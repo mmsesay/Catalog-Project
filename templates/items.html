@@ -16,13 +16,16 @@
         {% endif %}
     {% endwith %}
 
-    {% if current_user.is_authenticated %}
+    <!-- check if the user is authenticated and has authorization to perform operations on this item-->
+    {% if current_user.is_authenticated and current_user.id == authUser.user_id %}
+                
         <div class="mb-10">
             <a class="ml-48 inline-block border border-white text-xl rounded hover:bg-teal-500 text-white py-1 px-3" 
                 href="{{url_for('createItem', categoryName=categoryName)}}">Add New Item</a>
             <a class="ml-10 inline-block border border-white text-xl rounded hover:bg-blue-400 text-white py-1 px-3" 
                 href="{{url_for('allCategories', user_id=current_user.id)}}">Back</a>
         </div>
+
     {% endif %}
 
     <ul>
