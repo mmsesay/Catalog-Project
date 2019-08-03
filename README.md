@@ -55,24 +55,23 @@ Below are the tools you need to have in order to execute this program:
 
 4. **flask** : You need to create a virtual environment before install flask.
     The recommended way to create a virtual environment is to use the venv module. To install the python3-venv package that provides the venv module run the following command: ```sudo apt install python3-venv```
-- Create a virtual environment directory: ```mkdir my_flask_app```
-- Navigate to the virtual environment directory: ```cd my_flask_app```
-- Once inside the directory, run the following command to create your new virtual environment: ```python3 -m venv venv```
-- To start using this virtual environment, you need to activate it by running the activate script: ```source venv/bin/activate```
-- Now that the virtual environment is activated, you can use the Python package manager pip to install Flask: ```(venv) pip install Flask```
-- Verify the installation completed successfully with the following command which will print the Flask version: ```python -m flask --version```
-- Now navigate back to the vagrant directory and clone the repo:
-    ```git clone https://github.com/mmsesay/Catalog-Project.git```
-- cd to the **Catalog-Project** directory
+    1. Create a virtual environment directory: ```mkdir my_flask_app```
+    2. Navigate to the virtual environment directory: ```cd my_flask_app```
+    3. Once inside the directory, run the following command to create your new virtual environment: ```python3 -m venv venv```
+    4. To start using this virtual environment, you need to activate it by running the activate script: ```source venv/bin/activate```
+    5. Now that the virtual environment is activated, you can use the Python package manager pip to install Flask: ```(venv) pip install Flask```
+    6. Verify the installation completed successfully with the following command which will print the Flask version: ```python -m flask --version```
+    7. Now navigate back to the vagrant directory and clone the repo:
+        ```git clone https://github.com/mmsesay/Catalog-Project.git```
+    8. cd to the **Catalog-Project** directory
 
-5. Install the following dependencies also
+5. Install the following dependencies also:
     1. **sqlalchemy** : run the command: ```sudo easy_install sqlalchemy```
     2. **flask-login** : run the command: ```pip install flask-login```
     3. **oauth2client** : visit-> https://oauth2client.readthedocs.io/en/latest/ or type: ```pip install --upgrade oauth2client```
     4. **httplib2** : run the command: ```pip install httplib2```
     5. **requests** : run the command: ```pip install requests``` or ```easy_install requests```
     6. **werkzeug**: run the command: ```pip install Werkzeug``` or ```easy_install Werkzeug```
-    7. 
 
 ## Executing the program
 Make sure you are in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
