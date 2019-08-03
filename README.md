@@ -71,6 +71,8 @@ Below are the tools you need to have in order to execute this program:
     3. **oauth2client** : visit-> https://oauth2client.readthedocs.io/en/latest/ or type: ```pip install --upgrade oauth2client```
     4. **httplib2** : run the command: ```pip install httplib2```
     5. **requests** : run the command: ```pip install requests``` or ```easy_install requests```
+    6. **werkzeug**: run the command: ```pip install Werkzeug``` or ```easy_install Werkzeug```
+    7. 
 
 ## Executing the program
 Make sure you are in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
