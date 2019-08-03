@@ -43,7 +43,6 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-
 # all category api endpoint
 @app.route('/catalog/categories/JSON')
 def categoryJSON():
