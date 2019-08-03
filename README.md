@@ -53,9 +53,8 @@ Below are the tools you need to have in order to execute this program:
     - secondly run **vagrant ssh** to log into the vm-machine
     - Inside the vm change to the vagrant directory, **cd /vagrant**
 
-4. Install this dependency in the vagrant directory
-**flask** : You need to create a virtual environment before install flask.
-The recommended way to create a virtual environment is to use the venv module. To install the python3-venv package that provides the venv module run the following command: ```sudo apt install python3-venv```
+4. **flask** : You need to create a virtual environment before install flask.
+    The recommended way to create a virtual environment is to use the venv module. To install the python3-venv package that provides the venv module run the following command: ```sudo apt install python3-venv```
 - Create a virtual environment directory: ```mkdir my_flask_app```
 - Navigate to the virtual environment directory: ```cd my_flask_app```
 - Once inside the directory, run the following command to create your new virtual environment: ```python3 -m venv venv```
@@ -74,7 +73,7 @@ The recommended way to create a virtual environment is to use the venv module. T
     5. **requests** : run the command: ```pip install requests``` or ```easy_install requests```
 
 ## Executing the program
-Make sure your in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
+Make sure you are in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
 
 ## How to use the API Endpoints
 This program is running on localhost port 5000. Therefore, use the API endpoints like so http://localhost:5000/catalog/categories/JSON 
