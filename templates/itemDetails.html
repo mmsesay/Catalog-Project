@@ -21,10 +21,10 @@
                     href="{{url_for('editItem', categoryName=categoryName, itemName=item.name)}}">Edit</a>
                 <a class="ml-4 inline-block border border-white text-xl rounded-full hover:bg-red-700 bg-red-500 text-white py-1 px-3"
                     href="{{url_for('deleteItem', categoryName=categoryName, itemName=item.name)}}">Delete</a>
-                <a class="ml-4 inline-block border border-white text-xl rounded-full hover:bg-blue-700 bg-blue-500 text-white py-1 px-3"
-                    href="{{url_for('allItems', categoryName=categoryName)}}">Back</a>
             </div>
         {% endif %}
+            <a class="ml-4 inline-block border border-white text-xl rounded-full hover:bg-blue-700 bg-blue-500 text-white py-1 px-3"
+            href="{{url_for('allItems', categoryName=categoryName)}}">Back</a>
     </div>
     
 {% endblock %}
