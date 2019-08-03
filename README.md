@@ -73,11 +73,13 @@ The recommended way to create a virtual environment is to use the venv module. T
     4. **httplib2** : run the command: ```pip install httplib2```
     5. **requests** : run the command: ```pip install requests``` or ```easy_install requests```
 
-6. Executing the program
-    - Make sure your in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
+## Executing the program
+Make sure your in the Catalog-Project directory, type: ``` python app.py ``` and hit enter
 
-7. How to use the API Endpoints
-    - **/catalog/categories/JSON** : can return all the categories in the db
-    - **/catalog/items/JSON** : can return all the items in the db
-    - **/catalog/<\categoryName>/JSON** - can return a specific category and it items. Eg **/catalog/Computer/JSON**
-    - **/catalog/<\categoryName>/<\itemName>/JSON** - can return a specific category and a specific item that belong to it. Eg **/catalog/Computer/Mouse/JSON**
+## How to use the API Endpoints
+This program is running on localhost port 5000. Therefore, use the API endpoints like so http://localhost:5000/catalog/categories/JSON 
+
+1. **/catalog/categories/JSON** : can return all the categories in the db
+2. **/catalog/items/JSON** : can return all the items in the db
+3. **/catalog/categoryName/JSON** - can return a specific category and it items. Eg **/catalog/Computer/JSON**
+4. **/catalog/categoryName/itemName/JSON** - can return a specific category and a specific item that belong to it. Eg **/catalog/Computer/Mouse/JSON**
