@@ -72,6 +72,8 @@ Below are the tools you need to have in order to execute this program:
     4. **httplib2** : run the command: ```pip install httplib2```
     5. **requests** : run the command: ```pip install requests``` or ```easy_install requests```
     6. **werkzeug**: run the command: ```pip install Werkzeug``` or ```easy_install Werkzeug```
+    7. **blinker**: Blinker provides a fast dispatching system that allows any number of interested parties to subscribe to events, or “signals”. run ```pip install blinker``` read more https://pypi.org/project/blinker/
+
 
 ## Executing the program
 Make sure you are in the Catalog-Project directory, type: ``` python app.py ``` and hit enter

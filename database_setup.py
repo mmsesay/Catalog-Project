@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 import random, string
 
@@ -51,6 +51,10 @@ class User(Base, UserMixin):
     # 	user_id = data['id']
     # 	return user_id
 
+# OAuth class
+class OAuth(OAuthConsumerMixin):
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(User)
 
 # Category Class
 class Category(Base):

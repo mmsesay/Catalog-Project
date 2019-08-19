@@ -1,6 +1,11 @@
 #!/usr/bin/python
 from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, make_response, abort, g
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+
+# flask dance
+from flask_dance.contrib.github import make_github_blueprint, github
+from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from flask_dance.consumer import oauth_authorized
 
 app = Flask(__name__)
 
@@ -9,7 +14,8 @@ login_manager = LoginManager()
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, User, Items, Category
+from sqlalchemy.orm.exc import NoResultFound
+from database_setup import Base, User, Items, Category, OAuth
 
 # from flask_httpauth import HTTPBasicAuth
 
@@ -20,7 +26,11 @@ import string
 # importing the oauth modules
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
+# from apiclient import discovery
+# from google.oauth2 import id_token
+# from google.auth.transport import requests
 import httplib2
+# from oauth2client import client
 import json
 import requests
 
@@ -31,8 +41,16 @@ APPLICATION_NAME = "Item Catalog App"
 
 app.config['SECRET_KEY'] = 'mysecretkey'
 
+# OAuth blue prints instances
+github_blueprint = make_github_blueprint (client_id='23e587165c9c4abcf809', client_secret='54a13d52d7b52eda3c8c9ac874a49819eb25763a')
+# github_blueprint = make_github_blueprint(client_id='', client_secret='')
+
+# registering the blue print
+app.register_blueprint(github_blueprint, url_prefix='/github_login')
+
 #Connect to Database and create database session
 engine = create_engine('sqlite:///catalog.db?check_same_thread=False')
+
 
 # setting the app to make use of login manager 
 login_manager.init_app(app)
@@ -40,8 +58,76 @@ login_manager.login_view = 'login'
 
 Base.metadata.bind = engine
 
+# binding the engine
 DBSession = sessionmaker(bind=engine)
-session = DBSession()
+session = DBSession() # session object
+
+# check for the currently login user
+@login_manager.user_loader
+def load_user(user_id):
+    user = session.query(User).filter_by(id=user_id).first()
+    if not user:
+        flash('invalid username or password')
+        abort(400)  
+    return user
+
+github_blueprint.storage = SQLAlchemyStorage(OAuth, session, user=current_user)
+
+# user login route
+@app.route('/user/login', methods = ['GET','POST'])
+def login():
+
+    # variables
+    # gplus_id = ''
+    # credentials = ''
+
+    # generating a random string + digits as a state
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in range(32))
+    # saving that state to an array object
+    login_session['state'] = state
+
+    # check if the request made is a post
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # is username and password are inputed
+        if username and password is not '':
+            
+            # retrieve the username and store in an object
+            user = session.query(User).filter_by(username=username).first()
+            
+            # verifying the user password and the user object
+            if user.verify_password(password) and user is not '':
+                
+                login_user(user) # login the user
+                # flash('login successfully')
+
+                # saving the requested page as next
+                next = request.args.get('next')
+
+                # if the request is none
+                if next == None or not next[0] == '/':
+                    next = url_for('allCategories', user_id=user.id)
+                return redirect(next) # redirecting to the prevoius or next url
+            else:
+                # throw error if no match for username or password
+                flash("invalid username or password")
+        else:
+            # throw this error message if the username and password fields are empty
+            flash("username and password are required")
+
+    # return if the request is GET and passing the current session state from login_session['state'] object
+    return render_template('login.html', STATE=state)
+
+# user logout route
+@app.route('/user/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("you are logged out")
+    return redirect(url_for('index'))
 
 # all category api endpoint
 @app.route('/catalog/categories/JSON')
@@ -114,162 +200,100 @@ def register():
     # render if the request was a GET
     return render_template('register.html')
 
-# user login route
-@app.route('/user/login', methods = ['GET','POST'])
-def login():
-
-    # generating a random string + digits as a state
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in range(32))
-    # saving that state to an array object
-    login_session['state'] = state
-    login_session['provider'] = 'google'
-    # login_session['gplus_id'] = gplus_id
-    # login_session['credentials'] = credentials
-
-    # check if the request made is a post
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        # is username and password are inputed
-        if username and password is not '':
-            
-            # retrieve the username and store in an object
-            user = session.query(User).filter_by(username=username).first()
-            
-            # verifying the user password and the user object
-            if user.verify_password(password) and user is not '':
-                
-                login_user(user) # login the user
-                # flash('login successfully')
-
-                # saving the requested page as next
-                next = request.args.get('next')
-
-                # if the request is none
-                if next == None or not next[0] == '/':
-                    next = url_for('allCategories', user_id=user.id)
-                return redirect(next) # redirecting to the prevoius or next url
-            else:
-                # throw error if no match for username or password
-                flash("invalid username or password")
-        else:
-            # throw this error message if the username and password fields are empty
-            flash("username and password are required")
-
-    # return if the request is GET and passing the current session state from login_session['state'] object
-    return render_template('login.html', STATE=state)
-
-# user logout route
-@app.route('/user/logout')
-@login_required
-def logout():
-    logout_user()
-    flash("you are logged out")
-    return redirect(url_for('index'))
-
-# check for the currently login user
-@login_manager.user_loader
-def load_user(user_id):
-    user = session.query(User).filter_by(id=user_id).first()
-    if not user:
-        flash('invalid username or password')
-        abort(400)  
-    return user
-
 # google sign in
-# @app.route('/oauth/google', methods=['POST'])
-# def googleConnect():
+@app.route('/gconnect', methods=['POST'])
+def googleConnect():
 
-    # if provi
+    # # Obtain authorization code
+    code = request.data
 
+    # Validate state token
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid state parameter.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
-    # check if request args doesn't match the login_session state
-    # if request.args.get('state') != login_session['state']:
-    #     response = make_response(json.dumps('Invalid State Parameter'),401)
-    #     response.headers['Content-Type'] = 'application/json'
-    #     return response
+    try:
+        # Upgrade the authorization code into a credentials object
+        oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
+        oauth_flow.redirect_uri = 'postmessage'
+        credentials = oauth_flow.step2_exchange(code)
+    except FlowExchangeError:
+        response = make_response(
+            json.dumps('Failed to upgrade the authorization code.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
-    # # get the one time code from the server
-    # code = request.data
+#     # Check that the access token is valid.
+    access_token = credentials.access_token
 
-    # # try to use this one time code for authentication credentials from the server
-    # try:
-    #     # creating a flow from clients secrets and save in an object
-    #     oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
-    #     oauth_flow.redirect_uri = 'postmessage' # confirm the one time code that our server is sending off
-    #     credentials = oauth_flow.step2_exchange(code) # exchanging the code for credentials
-    # # if an error occurred during the exchange process
-    # except FlowExchangeError:
-    #     # making a response object
-    #     response = make_response(json.dumps('Failed to send off the authorization code'), 401)
-    #     # setting the response header
-    #     response.headers['Content-Type'] = 'application/json'
-    #     return response
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+           % access_token)
+    h = httplib2.Http()
+    result = json.loads((h.request(url, 'GET')[1]).decode())
+
+    # If there was an error in the access token info, abort.
+    if result.get('error') is not None:
+        response = make_response(json.dumps(result.get('error')), 500)
+        response.headers['Content-Type'] = 'application/json'
+
+    # # Verify that the access token is used for the intended user.
+    gplus_id = credentials.id_token['sub']
+    if result['user_id'] != gplus_id:
+        response = make_response(json.dumps("Token's user ID doesn't match given user ID."), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Verify that the access token is valid for this app.
+    if result['issued_to'] != CLIENT_ID:
+        response = make_response(json.dumps("Token's client ID does not match app's."), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # store the access token for later use
+    login_session['credentials'] = credentials.access_token
+    login_session['gplus_id'] = gplus_id
     
-    # # validate the access token
-    # access_token = credentials.access_token
-    # url = ('https://www.googleapis.come/oauth2/v1/tokeninfo?access_token={}'.format(access_token))
-    # h = httplib2.Http()
-    # # storing the response to a result object
-    # result = json.loads(h.request(url, 'GET')[1])
+    #Get user info
+    userinfo_url =  "https://www.googleapis.com/oauth2/v1/userinfo"
+    params = {'access_token': credentials.access_token, 'alt':'json'}
+    answer = requests.get(userinfo_url, params=params)
+    data = json.loads(answer.text)
+    # data = answer.json()
 
-    # # check the result 
-    # if result.get('error') is not None:
-    #     response = make_response(json.dumps(result.get('error')), 500)
-    #     response.headers ['Content-Type'] = 'application/json'
-
-    # # verify the actual user
-    # gplus_id = credentials.id_token['sub']
-    # if result['user_id'] != gplus_id:
-    #     response = make_response(json.dumps('Token\'s user ID doesn\'t match with the given user ID'), 401)
-    #     response.headers['Content-Type'] = 'application/json'
-    #     return response
-    
-    # # Verify that the access token is valid for this app.
-    # if result['issued_to'] != CLIENT_ID:
-    #     response = make_response(
-    #         json.dumps("Token's client ID does not match app's."), 401)
-    #     print("Token's client ID does not match app's.")
-    #     response.headers['Content-Type'] = 'application/json'
-    #     return response
-
-    # stored_credentials = login_session.get('credentials')
-    # stored_gplus_id = login_session.get('gplus_id')
-    # if stored_credentials is not None and gplus_id == stored_gplus_id:
-    #     response = make_response(json.dumps('Current user is already connected.'),
-    #                              200)
-    #     response.headers['Content-Type'] = 'application/json'
-    #     return response
-
-    # # Store the access token in the session for later use.
-    # login_session['credentials'] = credentials
-    # login_session['gplus_id'] = gplus_id
-
-    # # Get user info
-    # userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    # params = {'access_token': credentials.access_token, 'alt': 'json'}
-    # answer = requests.get(userinfo_url, params=params)
-
-    # data = json.loads(answer.txt)
-
-    # login_session['username'] = data['name']
-    # login_session['picture'] = data['picture']
-    # login_session['email'] = data['email']
+    login_session['userid'] = result['user_id']
+    login_session['username'] = data['name']
+    login_session['email'] = data['email']
 
     # output = ''
     # output += '<h1>Welcome, '
-    # output += login_session['username']
+    # output += username
     # output += '!</h1>'
-    # output += '<img src="'
-    # output += login_session['picture']
     # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    # flash("you are now logged in as %s" % login_session['username'])
+    # flash("you are now logged in as %s" % username)
+    # print("done!")
     # return output
 
+    #see if user exists, if it doesn't make a new one
+    # user = session.query(User).filter_by(email=email).first()
+
+    # if user is '':
+    #     # storing the User data to an object 
+    #     user = User(username=username, email=email, password=username)
+    #     session.add(user) # adding the object
+    #     session.commit() # saving the object to the database
+
+    #     login_user(user)
+    flash('You are logged in as {}'.format(login_session['username'])) # flashing a successful message
+    return login_session['username']
+    # return redirect(url_for('index'))
+        # category = session.query(Category).filter_by(user_id=user_id)
+        # return render_template('categories.html', current_user.user=username)
+    # return redirect(url_for('login'))
+
+
 # google disconection
-@app.route('/gdisconnect')
+# @app.route('/gdisconnect')
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
@@ -299,78 +323,78 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-@app.route('/fbconnect', methods=['POST'])
-def fbConnect():
-    # check if request args doesn't match the login_session state
-    if request.args.get('state') != login_session['state']:
-        response = make_response(json.dumps('Invalid State Parameter'),401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+# @app.route('/fbconnect', methods=['POST'])
+# def fbConnect():
+#     # check if request args doesn't match the login_session state
+#     if request.args.get('state') != login_session['state']:
+#         response = make_response(json.dumps('Invalid State Parameter'),401)
+#         response.headers['Content-Type'] = 'application/json'
+#         return response
 
-    access_token = request.data
+#     access_token = request.data
 
-    app_id = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_id']
-    app_secret = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_secret']
-    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (app_id, app_secret, access_token)
-    h = httplib2.Http()
-    result = h.result(url, 'GET')[1]
+#     app_id = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_id']
+#     app_secret = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_secret']
+#     url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (app_id, app_secret, access_token)
+#     h = httplib2.Http()
+#     result = h.result(url, 'GET')[1]
 
-    # use token to get user info from api
-    userinfo_url = "https://graph.facebook.com/v2.8/me"
-    # strip expire tag from access token
-    token = result.split("&")[0]
+#     # use token to get user info from api
+#     userinfo_url = "https://graph.facebook.com/v2.8/me"
+#     # strip expire tag from access token
+#     token = result.split("&")[0]
 
-    url = "https://graph.facebook.com/v2.8/me?access_token=%s&fields=name,id,email' % token"
-    h = httplib2.Http()
-    result = h.result(url, 'GET')[1]
+#     url = "https://graph.facebook.com/v2.8/me?access_token=%s&fields=name,id,email' % token"
+#     h = httplib2.Http()
+#     result = h.result(url, 'GET')[1]
 
-    data = json.loads(result)
-    login_session['provider'] = 'facebook'
-    login_session['username'] = data['name']
-    login_session['email'] = data['email']
+#     data = json.loads(result)
+#     login_session['provider'] = 'facebook'
+#     login_session['username'] = data['name']
+#     login_session['email'] = data['email']
 
-    # see if the user exists
-    user_id = getUserID(login_session['username'])
-    if not user_id:
-        user_id = createUser(login_session)
-        login_session['user_id'] = user_id
+#     # see if the user exists
+#     user_id = getUserID(login_session['username'])
+#     if not user_id:
+#         user_id = createUser(login_session)
+#         login_session['user_id'] = user_id
 
-        output = ''
-        output += '<h1>Welcome</h1>'
-        output += login_session['username']
+#         output = ''
+#         output += '<h1>Welcome</h1>'
+#         output += login_session['username']
 
-@app.route('/fbdisconnect')
-def fbdisconnect():
-    facebook_id = login_session['facebook_id']
-    url = 'https://graph.facebook.com/%s/permissions' % facebook_id
-    h = httplib2.Http()
-    result = h.request(url, 'DELETE')[1]
-    del login_session['username']
-    del login_session['email']
-    del login_session['facebook_id']
-    return "you have been logged out"
+# @app.route('/fbdisconnect')
+# def fbdisconnect():
+#     facebook_id = login_session['facebook_id']
+#     url = 'https://graph.facebook.com/%s/permissions' % facebook_id
+#     h = httplib2.Http()
+#     result = h.request(url, 'DELETE')[1]
+#     del login_session['username']
+#     del login_session['email']
+#     del login_session['facebook_id']
+#     return "you have been logged out"
 
-@app.route('/disconnect')
-def disconnect():
-    if 'provider' in login_session:
-        if login_session['provider'] == 'google':
-            gdisconnect()
-            del login_session['g_id']
-            del login_session['credentials']
-        if login_session['provider'] == 'facebook':
-            fbdisconnect()
-            del login_session['facebook_id']
+# @app.route('/disconnect')
+# def disconnect():
+    # if 'provider' in login_session:
+    #     if login_session['provider'] == 'google':
+    #         gdisconnect()
+    #         del login_session['g_id']
+    #         del login_session['credentials']
+    #     if login_session['provider'] == 'facebook':
+    #         fbdisconnect()
+    #         del login_session['facebook_id']
 
-        del login_session['username']
-        del login_session['email']
-        del login_session['user_id']
-        del login_session['provider']
+    #     del login_session['username']
+    #     del login_session['email']
+    #     del login_session['user_id']
+    #     del login_session['provider']
 
-        flash("you have successfully been logged out")
-        return redirect(url_for('index'))
-    else:
-        flash("you were not logged in")
-        redirect(url_for('index'))
+    #     flash("you have successfully been logged out")
+    #     return redirect(url_for('index'))
+    # else:
+    #     flash("you were not logged in")
+    #     redirect(url_for('index'))
 
 # create a new category
 @app.route('/catalog/category/new/<int:user_id>', methods = ['GET','POST'])
