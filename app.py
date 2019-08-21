@@ -1,11 +1,6 @@
 #!/usr/bin/python
-from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, make_response, abort, g
+from flask import Flask, render_template, request, redirect,jsonify, url_for, flash, make_response, abort, session as login_session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
-# flask dance
-from flask_dance.contrib.github import make_github_blueprint, github
-from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
-from flask_dance.consumer import oauth_authorized
 
 app = Flask(__name__)
 
@@ -18,44 +13,31 @@ from sqlalchemy.orm.exc import NoResultFound
 from database_setup import Base, User, Items, Category, OAuth
 
 # from flask_httpauth import HTTPBasicAuth
-
-from flask import session as login_session
 import random
 import string
 
 # importing the oauth modules
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
-# from apiclient import discovery
-# from google.oauth2 import id_token
-# from google.auth.transport import requests
 import httplib2
-# from oauth2client import client
 import json
 import requests
 
-# auth = HTTPBasicAuth()
-
+# loading the client secret
 CLIENT_ID = json.loads(open('client_secret.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "Item Catalog App"
 
+# app secret
 app.config['SECRET_KEY'] = 'mysecretkey'
-
-# OAuth blue prints instances
-github_blueprint = make_github_blueprint (client_id='23e587165c9c4abcf809', client_secret='54a13d52d7b52eda3c8c9ac874a49819eb25763a')
-# github_blueprint = make_github_blueprint(client_id='', client_secret='')
-
-# registering the blue print
-app.register_blueprint(github_blueprint, url_prefix='/github_login')
 
 #Connect to Database and create database session
 engine = create_engine('sqlite:///catalog.db?check_same_thread=False')
-
 
 # setting the app to make use of login manager 
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# bind the engine
 Base.metadata.bind = engine
 
 # binding the engine
@@ -71,15 +53,9 @@ def load_user(user_id):
         abort(400)  
     return user
 
-github_blueprint.storage = SQLAlchemyStorage(OAuth, session, user=current_user)
-
 # user login route
 @app.route('/user/login', methods = ['GET','POST'])
 def login():
-
-    # variables
-    # gplus_id = ''
-    # credentials = ''
 
     # generating a random string + digits as a state
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
@@ -109,7 +85,7 @@ def login():
 
                 # if the request is none
                 if next == None or not next[0] == '/':
-                    next = url_for('allCategories', user_id=user.id)
+                    next = url_for('allCategories')
                 return redirect(next) # redirecting to the prevoius or next url
             else:
                 # throw error if no match for username or password
@@ -204,7 +180,7 @@ def register():
 @app.route('/gconnect', methods=['POST'])
 def googleConnect():
 
-    # # Obtain authorization code
+    # Obtain authorization code
     code = request.data
 
     # Validate state token
@@ -217,14 +193,14 @@ def googleConnect():
         # Upgrade the authorization code into a credentials object
         oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
-        credentials = oauth_flow.step2_exchange(code)
+        credentials = oauth_flow.step2_exchange(code) # exchanging the code for user credentials
     except FlowExchangeError:
         response = make_response(
             json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
 
-#     # Check that the access token is valid.
+    # Check that the access token is valid.
     access_token = credentials.access_token
 
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
@@ -258,42 +234,35 @@ def googleConnect():
     userinfo_url =  "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt':'json'}
     answer = requests.get(userinfo_url, params=params)
-    data = json.loads(answer.text)
-    # data = answer.json()
+    # data = json.loads(answer.text)
+    data = answer.json()
 
     login_session['userid'] = result['user_id']
     login_session['username'] = data['name']
     login_session['email'] = data['email']
 
-    # output = ''
-    # output += '<h1>Welcome, '
-    # output += username
-    # output += '!</h1>'
-    # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    # flash("you are now logged in as %s" % username)
-    # print("done!")
-    # return output
 
-    #see if user exists, if it doesn't make a new one
-    # user = session.query(User).filter_by(email=email).first()
+    # #see if user exists, if it doesn't make a new one
+    user = session.query(User).filter_by(email=login_session['email']).one()
+
+    if not user:
+        user_id = login_user(login_session)
+        login_session['user_id'] = user_id
 
     # if user is '':
     #     # storing the User data to an object 
-    #     user = User(username=username, email=email, password=username)
-    #     session.add(user) # adding the object
+    #     u = User(username=login_session['username'], email=login_session['email'], password=login_session['username'])
+    #     session.add(u) # adding the object
     #     session.commit() # saving the object to the database
 
-    #     login_user(user)
+        # login_user(u)
+    session['username']=login_session['username']
     flash('You are logged in as {}'.format(login_session['username'])) # flashing a successful message
     return login_session['username']
-    # return redirect(url_for('index'))
-        # category = session.query(Category).filter_by(user_id=user_id)
-        # return render_template('categories.html', current_user.user=username)
-    # return redirect(url_for('login'))
-
+    
 
 # google disconection
-# @app.route('/gdisconnect')
+@app.route('/gdisconnect')
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
@@ -301,20 +270,21 @@ def gdisconnect():
         response = make_response(json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
+
     print('In gdisconnect access token is %s', access_token)
-    print('User name is: ')
+    print('Username is: ')
     print(login_session['username'])
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print('result is ')
     print(result)
+
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
-        del login_session['picture']
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -323,83 +293,11 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-# @app.route('/fbconnect', methods=['POST'])
-# def fbConnect():
-#     # check if request args doesn't match the login_session state
-#     if request.args.get('state') != login_session['state']:
-#         response = make_response(json.dumps('Invalid State Parameter'),401)
-#         response.headers['Content-Type'] = 'application/json'
-#         return response
-
-#     access_token = request.data
-
-#     app_id = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_id']
-#     app_secret = json.loads(open('fb_client_secret.json', 'r').read())['web']['app_secret']
-#     url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (app_id, app_secret, access_token)
-#     h = httplib2.Http()
-#     result = h.result(url, 'GET')[1]
-
-#     # use token to get user info from api
-#     userinfo_url = "https://graph.facebook.com/v2.8/me"
-#     # strip expire tag from access token
-#     token = result.split("&")[0]
-
-#     url = "https://graph.facebook.com/v2.8/me?access_token=%s&fields=name,id,email' % token"
-#     h = httplib2.Http()
-#     result = h.result(url, 'GET')[1]
-
-#     data = json.loads(result)
-#     login_session['provider'] = 'facebook'
-#     login_session['username'] = data['name']
-#     login_session['email'] = data['email']
-
-#     # see if the user exists
-#     user_id = getUserID(login_session['username'])
-#     if not user_id:
-#         user_id = createUser(login_session)
-#         login_session['user_id'] = user_id
-
-#         output = ''
-#         output += '<h1>Welcome</h1>'
-#         output += login_session['username']
-
-# @app.route('/fbdisconnect')
-# def fbdisconnect():
-#     facebook_id = login_session['facebook_id']
-#     url = 'https://graph.facebook.com/%s/permissions' % facebook_id
-#     h = httplib2.Http()
-#     result = h.request(url, 'DELETE')[1]
-#     del login_session['username']
-#     del login_session['email']
-#     del login_session['facebook_id']
-#     return "you have been logged out"
-
-# @app.route('/disconnect')
-# def disconnect():
-    # if 'provider' in login_session:
-    #     if login_session['provider'] == 'google':
-    #         gdisconnect()
-    #         del login_session['g_id']
-    #         del login_session['credentials']
-    #     if login_session['provider'] == 'facebook':
-    #         fbdisconnect()
-    #         del login_session['facebook_id']
-
-    #     del login_session['username']
-    #     del login_session['email']
-    #     del login_session['user_id']
-    #     del login_session['provider']
-
-    #     flash("you have successfully been logged out")
-    #     return redirect(url_for('index'))
-    # else:
-    #     flash("you were not logged in")
-    #     redirect(url_for('index'))
-
 # create a new category
-@app.route('/catalog/category/new/<int:user_id>', methods = ['GET','POST'])
+@app.route('/catalog/category/new', methods = ['GET','POST'])
 @login_required
-def createCategory(user_id):
+def createCategory():
+    
     # if the request is a post
     if request.method == 'POST':
         # saving the form value 
@@ -416,6 +314,9 @@ def createCategory(user_id):
                 
                 # fetching just the login user_id from the user table
                 # user_id = session.query(User).filter_by(id=user_id).one()
+                
+                # fetching the current logged in user id
+                user_id = current_user.id
 
                 # storing the category name and the user_id 
                 category = Category(name=inputtedName, user_id=user_id)
@@ -435,9 +336,14 @@ def createCategory(user_id):
     return render_template('newCategory.html')
 
 # catalog homepage route
-@app.route('/catalog/categories/<int:user_id>')
-def allCategories(user_id):
+@app.route('/catalog/categories')
+def allCategories():
+    # fetching the current user id
+    user_id = current_user.id
     category = session.query(Category).filter_by(user_id=user_id)
+    
+    # if 'username' not in login_session:
+        # return redirect(url_for('login'))
     return render_template('categories.html', allCats=category)
 
 # edit a category
@@ -534,7 +440,7 @@ def createItem(categoryName):
     # render the template if the request was a GET        
     return render_template('newItem.html', categoryName=categoryName)
 
-# specific item route
+# view specific item route
 @app.route('/catalog/<categoryName>/<itemName>')
 def viewItem(categoryName,itemName):
     cat = session.query(Category).filter_by(name=categoryName).one()
