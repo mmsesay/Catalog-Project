@@ -3,25 +3,25 @@
 {% include "header.html" %}
 
         <!--NEW GOOGLE SIGN IN BUTTON -->
-    <h2>There's a new Google Sign-In Option!!</h2>
-    <p>my sate is: {{STATE}}</p>
+    <!-- <h2>There's a new Google Sign-In Option!!</h2>
+    <p>my sate is: {{STATE}}</p> -->
 
     
-
-    <div id="result"></div>
-
     <!--END NEW GOOGLE BUTTON -->
 
 
     <!-- LOGIN FORM -->
 
-    <div class="w-full max-w-sm mx-auto m-8">
-            <button id="signinButton">Sign in with Google</button>
-            <script>
-              $('#signinButton').click(function() {
+    <div class="w-full max-w-sm mx-auto m-8">   
+        
+        <button id="signoutButton" class="text-white text-lg">Sign out</button>
+        <div id="signinButton" class="mb-10"></div>
+        <script>
+            // signin button
+            $('#signinButton').click(function() {
                 auth2.grantOfflineAccess().then(signInCallback);
-              });
-            </script>
+            });
+        </script>
 
         <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" action="{{url_for('login')}}" method="POST">
             
@@ -68,8 +68,24 @@
     </div>
 
     <!-- END OF LOGIN FORM -->
+    <script src="https://apis.google.com/js/platform.js?onload=renderButton" async defer></script>
 
     <script>
+        
+
+        
+
+        // rendering the google custom sign in button
+        function renderButton() {
+            gapi.signin2.render('signinButton', {
+            // 'scope': 'profile email',
+            'width': 240,
+            'height': 50,
+            'longtitle': true,
+            'theme': 'dark'
+            });
+        }
+
         // google signin callback
         function signInCallback(authResult) {
             // check if the code was fetched
@@ -96,7 +112,7 @@
                             console.log('This is the authCode: ' + result);
                             // $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
                             setTimeout(function() {
-                                window.location.href = "/catalog/categories";
+                                window.location.href = "/";
                             }, 2000);
                         } else if (authResult['error']) {
                             console.log('There was an error: ' + authResult['error']);
@@ -113,15 +129,15 @@
             }
         };
 
-        
-        
-        // signout function
-        function signOut() {
+        // signout button
+        $('#signoutButton').click(function(){
             var auth2 = gapi.auth2.getAuthInstance();
             auth2.signOut().then(function () {
-            console.log('User signed out.');
+                console.log('User signed out.');
             });
-        }
+            // $('#signinButton').show();
+            // $('#signoutButton').hide();
+        });
     
     </script>
 

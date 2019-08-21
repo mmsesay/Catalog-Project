@@ -243,22 +243,21 @@ def googleConnect():
 
 
     # #see if user exists, if it doesn't make a new one
-    user = session.query(User).filter_by(email=login_session['email']).one()
+    # user = session.query(User).filter_by(email=login_session['email']).one()
 
-    if not user:
-        user_id = login_user(login_session)
-        login_session['user_id'] = user_id
+    # if not user:
+    #     user_id = login_user(login_session)
+    #     login_session['user_id'] = user_id
 
-    # if user is '':
+    # if user == False:
     #     # storing the User data to an object 
     #     u = User(username=login_session['username'], email=login_session['email'], password=login_session['username'])
     #     session.add(u) # adding the object
     #     session.commit() # saving the object to the database
-
-        # login_user(u)
-    session['username']=login_session['username']
+    #     login_user(u)
+    print("access token %s" % params)
     flash('You are logged in as {}'.format(login_session['username'])) # flashing a successful message
-    return login_session['username']
+    return login_session['userid']
     
 
 # google disconection
