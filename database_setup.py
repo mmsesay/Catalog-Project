@@ -51,11 +51,6 @@ class User(Base, UserMixin):
     # 	user_id = data['id']
     # 	return user_id
 
-# OAuth class
-class OAuth(OAuthConsumerMixin):
-    user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship(User)
-
 # Category Class
 class Category(Base):
     __tablename__ = "categories"

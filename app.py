@@ -10,7 +10,7 @@ login_manager = LoginManager()
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from database_setup import Base, User, Items, Category, OAuth
+from database_setup import Base, User, Items, Category
 
 # from flask_httpauth import HTTPBasicAuth
 import random
