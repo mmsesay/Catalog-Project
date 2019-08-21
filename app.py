@@ -340,6 +340,7 @@ def allCategories():
     # fetching the current user id
     user_id = current_user.id
     category = session.query(Category).filter_by(user_id=user_id)
+
     
     # if 'username' not in login_session:
         # return redirect(url_for('login'))
