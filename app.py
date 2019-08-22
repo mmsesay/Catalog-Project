@@ -9,7 +9,7 @@ login_manager = LoginManager()
 
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database_setup import Base, User, Items, Category
 
 # from flask_httpauth import HTTPBasicAuth
@@ -77,8 +77,8 @@ def login():
             # verifying the user password and the user object
             if user.verify_password(password) and user is not '':
                 
+                login_session['logged in'] = True # setting the user logged in session
                 login_user(user) # login the user
-                # flash('login successfully')
 
                 # saving the requested page as next
                 next = request.args.get('next')
@@ -135,10 +135,40 @@ def specificItemJSON(categoryName,itemName):
 def index():
     categories= session.query(Category).all()
     return render_template('home.html', categories=categories)
- 
+
+# User Helper Functions
+def createUser(login_session):
+
+    # try:
+    newUser = User(username=login_session['username'], email=login_session['email'], password=login_session['password'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).first()
+    login_user(user)
+
+    return user.id
+    # except MultipleResultsFound:
+    #     flash('multiple rows found')
+    #     return redirect('/user/login')
+    # except NoResultFound:
+    #     flash('no row found')
+    #     return redirect('/user/login')
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+def getUserID(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
 # new user creation route
 @app.route('/user/register', methods = ['GET','POST'])
 def register():
+
     # checking if the request was a post
     if request.method == 'POST':
 
@@ -180,14 +210,14 @@ def register():
 @app.route('/gconnect', methods=['POST'])
 def googleConnect():
 
-    # Obtain authorization code
-    code = request.data
-
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
+
+    # Obtain authorization code
+    code = request.data
 
     try:
         # Upgrade the authorization code into a credentials object
@@ -237,28 +267,25 @@ def googleConnect():
     # data = json.loads(answer.text)
     data = answer.json()
 
-    login_session['userid'] = result['user_id']
+    print(data['email'])
+
+    # # login_session['userid'] = result['user_id']
     login_session['username'] = data['name']
     login_session['email'] = data['email']
 
+    # check if the user already exit, else create newuser
+    user_id = getUserID(login_session['email'])
+    print("this is the newuser_id %s" % user_id)
 
-    # #see if user exists, if it doesn't make a new one
-    # user = session.query(User).filter_by(email=login_session['email']).one()
+    if user_id == None:
+        user_id = createUser(login_session)
+        print("newuser created with id %s" % user_id)
+    flash('you are already logged in')
+    login_session['user_id'] = user_id
 
-    # if not user:
-    #     user_id = login_user(login_session)
-    #     login_session['user_id'] = user_id
-
-    # if user == False:
-    #     # storing the User data to an object 
-    #     u = User(username=login_session['username'], email=login_session['email'], password=login_session['username'])
-    #     session.add(u) # adding the object
-    #     session.commit() # saving the object to the database
-    #     login_user(u)
-    print("access token %s" % params)
+    # print("access token %s" % params)
     flash('You are logged in as {}'.format(login_session['username'])) # flashing a successful message
-    return login_session['userid']
-    
+    return login_session['username']
 
 # google disconection
 @app.route('/gdisconnect')
@@ -297,6 +324,10 @@ def gdisconnect():
 @login_required
 def createCategory():
     
+    # check the user login session
+    if 'username' not in login_session:
+        return redirect('/user/login')
+
     # if the request is a post
     if request.method == 'POST':
         # saving the form value 
@@ -337,13 +368,9 @@ def createCategory():
 # catalog homepage route
 @app.route('/catalog/categories')
 def allCategories():
-    # fetching the current user id
-    user_id = current_user.id
-    category = session.query(Category).filter_by(user_id=user_id)
 
-    
-    # if 'username' not in login_session:
-        # return redirect(url_for('login'))
+    user_id = login_session['user_id']
+    category = session.query(Category).filter_by(user_id=user_id)
     return render_template('categories.html', allCats=category)
 
 # edit a category
@@ -406,6 +433,10 @@ def allItems(categoryName):
 @app.route('/catalog/<categoryName>/item/new', methods = ['GET','POST'])
 @login_required
 def createItem(categoryName):
+
+    if 'username' not in login_session:
+        return redirect('/user/login')
+
     # if the request is a POST
     if request.method == 'POST':
 
@@ -505,6 +536,7 @@ def deleteItem(categoryName, itemName):
     # return this template if the request was a GET
     return render_template('deleteItem.html',categoryName=categoryName,item=fetchedItem)
 
+# main function
 if __name__=="__main__":
     app.debug = True
     app.run(host='0.0.0.0', port=5000)

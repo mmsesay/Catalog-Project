@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 import random, string
@@ -12,7 +13,7 @@ secret_key = ''.join(random.choice(string.ascii_uppercase + string.digits)
 for x in range(32))
     
 # User Class
-class User(Base):
+class User(Base, UserMixin):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -65,7 +66,6 @@ class Category(Base):
            'id': self.id,
            'name': self.name
        }
-
 
 # Items Class
 class Items(Base):

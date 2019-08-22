@@ -71,9 +71,6 @@
     <script src="https://apis.google.com/js/platform.js?onload=renderButton" async defer></script>
 
     <script>
-        
-
-        
 
         // rendering the google custom sign in button
         function renderButton() {
@@ -112,7 +109,7 @@
                             console.log('This is the authCode: ' + result);
                             // $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
                             setTimeout(function() {
-                                window.location.href = "/";
+                                window.location.href = "/catalog/categories";
                             }, 2000);
                         } else if (authResult['error']) {
                             console.log('There was an error: ' + authResult['error']);
