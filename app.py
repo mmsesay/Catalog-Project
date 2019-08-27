@@ -12,10 +12,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from database_setup import Base, User, Items, Category
 
-# from flask_httpauth import HTTPBasicAuth
 import random
 import string
-
+ 
 # importing the oauth modules
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
@@ -55,7 +54,7 @@ def load_user(user_id):
 
 # user login route
 @app.route('/user/login', methods = ['GET','POST'])
-def login():
+def login():  
 
     # generating a random string + digits as a state
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
@@ -139,7 +138,7 @@ def index():
 # User Helper Functions
 def createUser(login_session):
 
-    # try:
+    # creating a new user
     newUser = User(username=login_session['username'], email=login_session['email'], password=login_session['password'])
     session.add(newUser)
     session.commit()
@@ -147,17 +146,13 @@ def createUser(login_session):
     login_user(user)
 
     return user.id
-    # except MultipleResultsFound:
-    #     flash('multiple rows found')
-    #     return redirect('/user/login')
-    # except NoResultFound:
-    #     flash('no row found')
-    #     return redirect('/user/login')
 
+# fetch user info function
 def getUserInfo(user_id):
     user = session.query(User).filter_by(id=user_id).one()
     return user
 
+# fetch user id function
 def getUserID(email):
     try:
         user = session.query(User).filter_by(email=email).one()
@@ -269,28 +264,30 @@ def googleConnect():
 
     print(data['email'])
 
-    # # login_session['userid'] = result['user_id']
+    # storing the user data into the login session
     login_session['username'] = data['name']
     login_session['email'] = data['email']
+    login_session['password'] = 'none'
 
     # check if the user already exit, else create newuser
     user_id = getUserID(login_session['email'])
-    print("this is the newuser_id %s" % user_id)
 
+    # check if none was found
     if user_id == None:
+        # create the user
         user_id = createUser(login_session)
         print("newuser created with id %s" % user_id)
-    flash('you are already logged in')
     login_session['user_id'] = user_id
 
-    # print("access token %s" % params)
-    flash('You are logged in as {}'.format(login_session['username'])) # flashing a successful message
     return login_session['username']
 
 # google disconection
 @app.route('/gdisconnect')
 def gdisconnect():
+    # storing the access token
     access_token = login_session.get('access_token')
+
+    # checking the access 
     if access_token is None:
         print('Access Token is None')
         response = make_response(json.dumps('Current user not connected.'), 401)

@@ -12,7 +12,7 @@
 					<a class="inline-block py-1 px-3 text-white text-xl" href="{{url_for('allCategories', user_id=current_user.id)}}">My Categories</a>
 				</li>
 				<li class="mr-3">
-					<a class="inline-block border border-white text-xl rounded hover:border-pink-700 text-white hover:bg-pink-700 py-1 px-3" href="{{url_for('logout')}}">Logout</a>
+					<a class="inline-block border border-white text-xl rounded hover:border-pink-700 text-white hover:bg-pink-700 py-1 px-3" id="signoutButton" href="{{url_for('logout')}}">Logout</a>
 				</li>
 			{% else %}
 				<li class="mr-3">
@@ -26,3 +26,13 @@
 	</ul>
 
 </div>
+
+<script>
+	// signout button
+	$('#signoutButton').click(function(){
+		var auth2 = gapi.auth2.getAuthInstance();
+		auth2.signOut().then(function () {
+			console.log('User signed out.');
+		});
+	});
+</script>

@@ -2,23 +2,16 @@
 {% block content %}
 {% include "header.html" %}
 
-        <!--NEW GOOGLE SIGN IN BUTTON -->
-    <!-- <h2>There's a new Google Sign-In Option!!</h2>
-    <p>my sate is: {{STATE}}</p> -->
-
-    
-    <!--END NEW GOOGLE BUTTON -->
-
-
     <!-- LOGIN FORM -->
 
     <div class="w-full max-w-sm mx-auto m-8">   
         
-        <button id="signoutButton" class="text-white text-lg">Sign out</button>
-        <div id="signinButton" class="mb-10"></div>
+        <!-- google sign in button -->
+        <div class="g-signin2 mb-5"></div>
+        
         <script>
-            // signin button
-            $('#signinButton').click(function() {
+            // signin button click function
+            $('.g-signin2').click(function() {
                 auth2.grantOfflineAccess().then(signInCallback);
             });
         </script>
@@ -68,20 +61,8 @@
     </div>
 
     <!-- END OF LOGIN FORM -->
-    <script src="https://apis.google.com/js/platform.js?onload=renderButton" async defer></script>
 
     <script>
-
-        // rendering the google custom sign in button
-        function renderButton() {
-            gapi.signin2.render('signinButton', {
-            // 'scope': 'profile email',
-            'width': 240,
-            'height': 50,
-            'longtitle': true,
-            'theme': 'dark'
-            });
-        }
 
         // google signin callback
         function signInCallback(authResult) {
@@ -89,9 +70,7 @@
             if (authResult['code']) {
 
                 // Hide the sign-in button now that the user is authorized, for example:
-                $('#signinButton').attr('style', 'display: none');
-
-                console.log('This is the authCode: ' + authResult['code']);
+                $('.g-signin2').attr('style', 'display: none');
 
                 // Send the code to the server
                 $.ajax({
@@ -106,8 +85,7 @@
                     success: function(result) {
                         // Handle or verify the server response if necessary.
                         if (result) {
-                            console.log('This is the authCode: ' + result);
-                            // $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+                            console.log('This is the successfull result: ' + result);
                             setTimeout(function() {
                                 window.location.href = "/catalog/categories";
                             }, 2000);
@@ -125,16 +103,6 @@
                 console.log('their was an error fetching the one time code');
             }
         };
-
-        // signout button
-        $('#signoutButton').click(function(){
-            var auth2 = gapi.auth2.getAuthInstance();
-            auth2.signOut().then(function () {
-                console.log('User signed out.');
-            });
-            // $('#signinButton').show();
-            // $('#signoutButton').hide();
-        });
     
     </script>
 
