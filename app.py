@@ -46,6 +46,7 @@ session = DBSession() # session object
 # check for the currently login user
 @login_manager.user_loader
 def load_user(user_id):
+    """This function loads the user."""
     user = session.query(User).filter_by(id=user_id).first()
     if not user:
         flash('invalid username or password')
@@ -55,6 +56,7 @@ def load_user(user_id):
 # user login route
 @app.route('/user/login', methods = ['GET','POST'])
 def login():  
+    """This function returns the login template and perform the relevant checks to authenticate a user."""
 
     # generating a random string + digits as a state
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
@@ -94,50 +96,57 @@ def login():
             flash("username and password are required")
 
     # return if the request is GET and passing the current session state from login_session['state'] object
-    return render_template('login.html', STATE=state)
+    return render_template('login.html', STATE = state)
 
 # user logout route
 @app.route('/user/logout')
 @login_required
 def logout():
+    """This function logout's a user"""
     logout_user()
     flash("you are logged out")
     return redirect(url_for('index'))
 
 # all category api endpoint
-@app.route('/catalog/categories/JSON')
+@app.route('/catalog/categories/api/v1/JSON')
 def categoryJSON():
-	allCategory = session.query(Category).all()
-	return jsonify(Categories=[cat.serialize for cat in allCategory])
+    """This api function return all the categories in the catalog."""
+    allCategory = session.query(Category).all()
+    return jsonify(Categories=[cat.serialize for cat in allCategory])
 
 # all items api endpoint
-@app.route('/catalog/items/JSON')
+@app.route('/catalog/items/api/v1/JSON')
 def ItemsJSON():
-	allItems = session.query(Items).all()
-	return jsonify(Items=[i.serialize for i in allItems])
+    """This api function return all the items in the catalog."""
+    allItems = session.query(Items).all()
+    return jsonify(Items=[i.serialize for i in allItems])
 
 # all items under a specific category api endpoint
-@app.route('/catalog/<categoryName>/JSON')
+@app.route('/catalog/<categoryName>/api/v1/JSON')
 def specificCategoryJSON(categoryName):
+    """This api function return a specific category from the catalog."""
     oneCat = session.query(Category).filter_by(name=categoryName).one()
-    items = session.query(Items).filter_by(category_id = oneCat.id).all()
+    items = session.query(Items).filter_by(category_id=oneCat.id).all()
     return jsonify(items=[i.serialize for i in items])
 
 # single item under a specific category api endpoint
-@app.route('/catalog/<categoryName>/<itemName>/JSON')
-def specificItemJSON(categoryName,itemName):
+@app.route('/catalog/<categoryName>/<itemName>/api/v1/JSON')
+def specificItemJSON(categoryName, itemName):
+    """This a api function return an item all the categories in the catalog."""
     oneItem = session.query(Items).filter_by(name=itemName).one()
     return jsonify(item=oneItem.serialize)
+
 
 # catalog homepage route
 @app.route('/')
 def index():
-    categories= session.query(Category).all()
+    """This function fetch all the categories from the catalog and render the homepage."""
+    categories = session.query(Category).all()
     return render_template('home.html', categories=categories)
 
 # User Helper Functions
 def createUser(login_session):
-
+    """This function creates a user and save the login session."""
     # creating a new user
     newUser = User(username=login_session['username'], email=login_session['email'], password=login_session['password'])
     session.add(newUser)
@@ -149,11 +158,13 @@ def createUser(login_session):
 
 # fetch user info function
 def getUserInfo(user_id):
+    """This is functon fetch a single user info."""
     user = session.query(User).filter_by(id=user_id).one()
     return user
 
 # fetch user id function
 def getUserID(email):
+    """This function fetch a user from the email passed and return that user's id."""
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
@@ -163,7 +174,7 @@ def getUserID(email):
 # new user creation route
 @app.route('/user/register', methods = ['GET','POST'])
 def register():
-
+    """This function handles the registration of a new user."""
     # checking if the request was a post
     if request.method == 'POST':
 
@@ -176,13 +187,13 @@ def register():
         if username and email and password is not '':
             
             # check if an email is not match was False
-            if session.query(User).filter_by(email = email).first() is None:
+            if session.query(User).filter_by(email=email).first() is None:
 
                 # check the password length
                 if len(password) > 6:
 
                     # storing the User data to an object 
-                    user = User(username = username, email = email, password=password)
+                    user = User(username=username, email=email, password=password)
                     session.add(user) # adding the object
                     session.commit() # saving the object to the database
                     flash('Thanks for signing up. Please login') # flashing a successful message
@@ -202,9 +213,9 @@ def register():
     return render_template('register.html')
 
 # google sign in
-@app.route('/gconnect', methods=['POST'])
+@app.route('/gconnect', methods = ['POST'])
 def googleConnect():
-
+    """This function login a user with the google OAuth credentials."""
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
@@ -262,8 +273,6 @@ def googleConnect():
     # data = json.loads(answer.text)
     data = answer.json()
 
-    print(data['email'])
-
     # storing the user data into the login session
     login_session['username'] = data['name']
     login_session['email'] = data['email']
@@ -284,6 +293,7 @@ def googleConnect():
 # google disconection
 @app.route('/gdisconnect')
 def gdisconnect():
+    """This function logs out a signed in google user."""
     # storing the access token
     access_token = login_session.get('access_token')
 
@@ -320,10 +330,7 @@ def gdisconnect():
 @app.route('/catalog/category/new', methods = ['GET','POST'])
 @login_required
 def createCategory():
-    
-    # check the user login session
-    if 'username' not in login_session:
-        return redirect('/user/login')
+    """This function handles the creation of a new category."""
 
     # if the request is a post
     if request.method == 'POST':
@@ -339,14 +346,11 @@ def createCategory():
             # check if object was an empty array
             if fetchedCategoryName is None:
                 
-                # fetching just the login user_id from the user table
-                # user_id = session.query(User).filter_by(id=user_id).one()
-                
                 # fetching the current logged in user id
                 user_id = current_user.id
 
                 # storing the category name and the user_id 
-                category = Category(name=inputtedName, user_id=user_id)
+                category = Category(name = inputtedName, user_id=user_id)
                 session.add(category) # adding the query
                 session.commit() # executing the query
                 flash('new category added') # flashing a successful message
@@ -365,7 +369,8 @@ def createCategory():
 # catalog homepage route
 @app.route('/catalog/categories')
 def allCategories():
-
+    """This function fetch and return all the categories a user have created."""
+    
     user_id = login_session['user_id']
     category = session.query(Category).filter_by(user_id=user_id)
     return render_template('categories.html', allCats=category)
@@ -374,6 +379,7 @@ def allCategories():
 @app.route('/catalog/<categoryName>/edit', methods = ['GET','POST'])
 @login_required
 def editCategory(categoryName):
+    """This function allows logged in users to edit categories they created."""
 
     # if the request is a POST
     if request.method == 'POST':
@@ -395,7 +401,7 @@ def editCategory(categoryName):
                     fetchedCategory.name = request.form['name']
                     session.add(fetchedCategory) # saving the new category name
                     session.commit()
-                    flash('Category \'{}\' updated to \'{}\''.format(categoryName,request.form['name'])) # flashing a successful message
+                    flash('Category \'{}\' updated to \'{}\''.format(categoryName, request.form['name'])) # flashing a successful message
                     return redirect(url_for('allCategories', user_id=fetchedCategory.user_id)) # redirecting the user
             else:
                 flash('Sorry \'{}\' category is already existing. Please input another name'.format(request.form['name']))
@@ -403,25 +409,34 @@ def editCategory(categoryName):
             flash('a category name is required')
 
     # return this is the request was a GET
-    return render_template('editCategory.html',categoryName=categoryName)
+    return render_template('editCategory.html',categoryName = categoryName)
 
 # delete a category
 @app.route('/catalog/<categoryName>/delete', methods = ['GET','POST'])
 @login_required
 def deleteCategory(categoryName):
+    """This function give previledge to logged in users to delete only categories the created."""
+
     # fetching a single category from the db and storing it in an object
     fetchedCategoryName = session.query(Category).filter_by(name=categoryName).first()
     categoryToDel = session.query(Category).filter_by(id=fetchedCategoryName.id).one()
+
+    # if the request is a post
     if request.method == 'POST':
-        session.delete(categoryToDel)
-        session.commit()
-        flash("Category \'{}\' deleted successfully".format(categoryToDel.name))
-        return redirect(url_for('allCategories', user_id=categoryToDel.user_id)) # redirecting the user
+
+        # check if the logged in user is the creator of this category
+        if fetchedCategoryName.user_id == current_user.id:
+            session.delete(categoryToDel)
+            session.commit()
+            flash("Category \'{}\' deleted successfully".format(categoryToDel.name))
+            return redirect(url_for('allCategories', user_id=categoryToDel.user_id)) # redirecting the user
+        flash("Operation failed! Your are not the creator of this category")
     return render_template('deleteCategory.html', categoryName=categoryName)
 
 # all items 
 @app.route('/catalog/<categoryName>/items')
 def allItems(categoryName):
+    """This function fetch all items from a category and return it to the items template."""
     cat = session.query(Category).filter_by(name=categoryName).first()
     items = session.query(Items).filter_by(category_id=cat.id)
     return render_template('items.html', categoryName=categoryName, items=items, authUser=cat) 
@@ -430,7 +445,7 @@ def allItems(categoryName):
 @app.route('/catalog/<categoryName>/item/new', methods = ['GET','POST'])
 @login_required
 def createItem(categoryName):
-
+    """This function gives logged in users the previledge to create an item."""
     if 'username' not in login_session:
         return redirect('/user/login')
 
@@ -470,17 +485,22 @@ def createItem(categoryName):
 
 # view specific item route
 @app.route('/catalog/<categoryName>/<itemName>')
-def viewItem(categoryName,itemName):
+def viewItem(categoryName, itemName):
+    """This function allows all users to view items."""
     cat = session.query(Category).filter_by(name=categoryName).one()
-    # fetching just one category from the Category DB where the name matches categoryName
+    # fetching just one category from the Category DB 
+    # where the name matches categoryName 
     item = session.query(Items).filter_by(name=itemName).one()
-    return render_template('itemDetails.html', categoryName=categoryName, item=item, authUser=cat)
+    return render_template(
+        'itemDetails.html', categoryName=categoryName, 
+        item=item, authUser=cat)
 
 # edit item for a category
 @app.route('/catalog/<categoryName>/<itemName>/edit', methods = ['GET','POST'])
 @login_required
 def editItem(categoryName, itemName):
-
+    """This function gives previledge to logged in 
+    users to edit only items they created."""
     # fetching a single category from the db and storing it in an object
     fetItem = session.query(Items).filter_by(name=itemName).one()
 
@@ -493,31 +513,38 @@ def editItem(categoryName, itemName):
 
         # check if the form was not empty
         if formItemName and formItemDescription is not '':
-
-            # fetching a single category from the db and storing it in an object
-            fetchedSingleItem = session.query(Items).filter_by(name=itemName).one()
+            # fetching a single category from the db 
+            # and storing it in an object
+            fetchedSingleItem = session.query(Items).filter_by(
+                name=itemName).one()
 
             # fetching the id of that fetchedSingleItem
-            fetchedItem = session.query(Items).filter_by(id=fetchedSingleItem.id).one()
+            fetchedItem = session.query(Items).filter_by(
+                id=fetchedSingleItem.id).one()
      
             # assign the new name to fetchedItem
             fetchedItem.name = formItemName
             fetchedItem.description = formItemDescription 
-            session.add(fetchedItem) # saving the new category name
+            session.add(fetchedItem)  # saving the new category name
             session.commit()
-            flash('Item \'{}\' updated'.format(itemName)) # flashing a successful message
-            return redirect(url_for('allItems', categoryName=categoryName)) # redirecting the user
+            # flashing a successful message
+            flash('Item \'{}\' updated'.format(itemName)) 
+            # redirecting the user
+            return redirect(url_for('allItems', categoryName=categoryName))  
         
         else:
             flash('an item name, description and category name is required')
 
     # return if the request was a GET
-    return render_template('editItem.html', categoryName=categoryName, item=fetItem)
+    return render_template(
+        'editItem.html', categoryName=categoryName, item=fetItem)
 
 # delete an item from a category
 @app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])
 @login_required
 def deleteItem(categoryName, itemName):
+    """This function gives previledge to logged in users 
+    to delete only items they created."""
     # fetching a single item from the db and storing it in an object
     fetchedItem = session.query(Items).filter_by(name=itemName).one()
     # fetching the item id
@@ -525,13 +552,13 @@ def deleteItem(categoryName, itemName):
 
     # check if the request was a POST
     if request.method == 'POST':
-        session.delete(itemToDel) # staging the item to delete
-        session.commit() # commiting the query
+        session.delete(itemToDel)  # staging the item to delete
+        session.commit()  # commiting the query
         flash("Item \'{}\' deleted successfully".format(itemToDel.name))
         return redirect(url_for('allItems', categoryName=categoryName)) 
-    
     # return this template if the request was a GET
-    return render_template('deleteItem.html',categoryName=categoryName,item=fetchedItem)
+    return render_template(
+        'deleteItem.html', categoryName=categoryName, item=fetchedItem)
 
 # main function
 if __name__=="__main__":

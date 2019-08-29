@@ -4,16 +4,12 @@ from sqlalchemy.orm import relationship
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
-import random, string
 
 Base = declarative_base()
-
-# creating a secret key
-secret_key = ''.join(random.choice(string.ascii_uppercase + string.digits) 
-for x in range(32))
     
 # User Class
 class User(Base, UserMixin):
+    """This is the User schema class"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -30,10 +26,10 @@ class User(Base, UserMixin):
     # verify password function
     def verify_password(self, password):
         return check_password_hash(self.hash_password, password)
-
    
 # Category Class
 class Category(Base):
+    """This is the Category schema class"""
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True)
@@ -51,6 +47,7 @@ class Category(Base):
 
 # Items Class
 class Items(Base):
+    """This is the Items schema class"""
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True)
