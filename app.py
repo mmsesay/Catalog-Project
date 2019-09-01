@@ -381,6 +381,9 @@ def allCategories():
 def editCategory(categoryName):
     """This function allows logged in users to edit categories they created."""
 
+    # fetching a single category from the db and storing it in an object
+    fetchedCategoryName = session.query(Category).filter_by(name=categoryName).first()
+
     # if the request is a POST
     if request.method == 'POST':
 
@@ -388,29 +391,35 @@ def editCategory(categoryName):
         if request.form['name'] is not '':
 
             # fetching a single category from the db and storing it in an object
-            fetchedCategoryName = session.query(Category).filter_by(name=categoryName).one()
+            fetchedCategory = session.query(Category).filter_by(name=categoryName).one()
 
-            if fetchedCategoryName.name != request.form['name']:
+            if fetchedCategory.name != request.form['name']:
                 # to fix 
-                fetchedCategory = session.query(Category).filter_by(id=fetchedCategoryName.id).one()
+                category = session.query(Category).filter_by(id=fetchedCategory.id).one()
 
                 # check if object name didn't match the form input name 
-                if fetchedCategory.name != request.form['name']:
+                if category.name != request.form['name']:
 
                     # assign the new name to fetchedCategory
-                    fetchedCategory.name = request.form['name']
-                    session.add(fetchedCategory) # saving the new category name
+                    category.name = request.form['name']
+                    session.add(category) # saving the new category name
                     session.commit()
                     flash('Category \'{}\' updated to \'{}\''.format(categoryName, request.form['name'])) # flashing a successful message
-                    return redirect(url_for('allCategories', user_id=fetchedCategory.user_id)) # redirecting the user
+                    return redirect(url_for('allCategories', user_id=category.user_id)) # redirecting the user
             else:
                 flash('Sorry \'{}\' category is already existing. Please input another name'.format(request.form['name']))
         else:
             flash('a category name is required')
 
-    # return this is the request was a GET
-    return render_template('editCategory.html',categoryName = categoryName)
-
+    # if the request is a GET
+    if request.method == 'GET':
+         # check if the logged in user is the creator of this category
+        if fetchedCategoryName.user_id == current_user.id:
+            # return this is the request was a GET
+            return render_template('editCategory.html',categoryName = categoryName)
+        flash("Edit Operation failed! Your are not the creator of \'{}\' category".format(categoryName))
+        return redirect(url_for('index'))
+    
 # delete a category
 @app.route('/catalog/<categoryName>/delete', methods = ['GET','POST'])
 @login_required
@@ -430,8 +439,14 @@ def deleteCategory(categoryName):
             session.commit()
             flash("Category \'{}\' deleted successfully".format(categoryToDel.name))
             return redirect(url_for('allCategories', user_id=categoryToDel.user_id)) # redirecting the user
-        flash("Operation failed! Your are not the creator of this category")
-    return render_template('deleteCategory.html', categoryName=categoryName)
+    
+    # if the request is a GET
+    if request.method == 'GET':
+         # check if the logged in user is the creator of this category
+        if fetchedCategoryName.user_id == current_user.id:
+            return render_template('deleteCategory.html', categoryName=categoryName)
+        flash("Delete Operation failed! Your are not the creator of \'{}\' category".format(categoryName))
+        return redirect(url_for('index'))  
 
 # all items 
 @app.route('/catalog/<categoryName>/items')
@@ -446,8 +461,6 @@ def allItems(categoryName):
 @login_required
 def createItem(categoryName):
     """This function gives logged in users the previledge to create an item."""
-    if 'username' not in login_session:
-        return redirect('/user/login')
 
     # if the request is a POST
     if request.method == 'POST':
@@ -501,8 +514,12 @@ def viewItem(categoryName, itemName):
 def editItem(categoryName, itemName):
     """This function gives previledge to logged in 
     users to edit only items they created."""
+
     # fetching a single category from the db and storing it in an object
     fetItem = session.query(Items).filter_by(name=itemName).one()
+
+    # fetching a single category from the db and storing it in an object
+    fetchedCategoryName = session.query(Category).filter_by(name=categoryName).first()
 
     # if the request is a POST
     if request.method == 'POST':
@@ -535,9 +552,16 @@ def editItem(categoryName, itemName):
         else:
             flash('an item name, description and category name is required')
 
-    # return if the request was a GET
-    return render_template(
-        'editItem.html', categoryName=categoryName, item=fetItem)
+    # if the request is a GET
+    if request.method == 'GET':
+         # check if the logged in user is the creator of this category
+        if fetchedCategoryName.user_id == current_user.id:
+            # return if the request was a GET
+            return render_template(
+                'editItem.html', categoryName=categoryName, item=fetItem)
+        flash("Edit Operation failed! Your are not the creator of item \'{}\'".format(itemName))
+        return redirect(url_for('index'))
+    
 
 # delete an item from a category
 @app.route('/catalog/<categoryName>/<itemName>/delete', methods = ['GET','POST'])
@@ -545,10 +569,14 @@ def editItem(categoryName, itemName):
 def deleteItem(categoryName, itemName):
     """This function gives previledge to logged in users 
     to delete only items they created."""
+
     # fetching a single item from the db and storing it in an object
     fetchedItem = session.query(Items).filter_by(name=itemName).one()
     # fetching the item id
     itemToDel = session.query(Items).filter_by(id=fetchedItem.id).one()
+
+    # fetching a single category from the db and storing it in an object
+    fetchedCategoryName = session.query(Category).filter_by(name=categoryName).first()
 
     # check if the request was a POST
     if request.method == 'POST':
@@ -556,9 +584,17 @@ def deleteItem(categoryName, itemName):
         session.commit()  # commiting the query
         flash("Item \'{}\' deleted successfully".format(itemToDel.name))
         return redirect(url_for('allItems', categoryName=categoryName)) 
-    # return this template if the request was a GET
-    return render_template(
-        'deleteItem.html', categoryName=categoryName, item=fetchedItem)
+    
+    # if the request is a GET
+    if request.method == 'GET':
+         # check if the logged in user is the creator of this category
+        if fetchedCategoryName.user_id == current_user.id:
+            # return this template if the request was a GET
+            return render_template(
+                'deleteItem.html', categoryName=categoryName, item=fetchedItem)
+        flash("Delete Operation failed! Your are not the creator of item \'{}\'".format(itemName))
+        return redirect(url_for('index'))
+    
 
 # main function
 if __name__=="__main__":
