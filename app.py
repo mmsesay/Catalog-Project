@@ -450,40 +450,46 @@ def editCategory(categoryName):
     # if the request is a POST
     if request.method == 'POST':
 
-        # check if the form was not empty
-        if request.form['name'] is not '':
+        if fetchedCategoryName.user_id == current_user.id:
+            # check if the form was not empty
+            if request.form['name'] is not '':
 
-            # fetching a single category from the db and storing it in an
-            # object
-            fetchedCategory = session.query(
-                Category).filter_by(name=categoryName).one()
+                # fetching a single category from the db and storing
+                # it in an object
+                fetchedCategory = session.query(
+                    Category).filter_by(name=categoryName).one()
 
-            if fetchedCategory.name != request.form['name']:
-                # to fix
-                category = session.query(Category).filter_by(
-                    id=fetchedCategory.id).one()
+                if fetchedCategory.name != request.form['name']:
+                    # to fix
+                    category = session.query(Category).filter_by(
+                        id=fetchedCategory.id).one()
 
-                # check if object name didn't match the form input name
-                if category.name != request.form['name']:
+                    # check if object name didn't match the form input name
+                    if category.name != request.form['name']:
 
-                    # assign the new name to fetchedCategory
-                    category.name = request.form['name']
-                    session.add(category)  # saving the new category name
-                    session.commit()
-                    # flashing a successful message
+                        # assign the new name to fetchedCategory
+                        category.name = request.form['name']
+                        session.add(category)  # saving the new category name
+                        session.commit()
+                        # flashing a successful message
+                        flash(
+                            'Category \'{}\' updated to \'{}\''.format(
+                                categoryName, request.form['name']))
+                        # redirecting the user
+                        return redirect(
+                            url_for(
+                                'allCategories',
+                                user_id=category.user_id))
+                else:
                     flash(
-                        'Category \'{}\' updated to \'{}\''.format(
-                            categoryName, request.form['name']))
-                    return redirect(
-                        url_for(
-                            'allCategories',
-                            user_id=category.user_id))  # redirecting the user
+                        'Sorry \'{}\' category is already existing.'
+                        'Input another name'.format(request.form['name']))
             else:
-                flash(
-                    'Sorry \'{}\' category is already existing. Please input'
-                    'another name'.format(request.form['name']))
-        else:
-            flash('a category name is required')
+                flash('a category name is required')
+
+        flash("""Edit Operation failed! Your are not the creator of \'{}\'
+        category""".format(categoryName))
+        return redirect(url_for('index'))
 
     # if the request is a GET
     if request.method == 'GET':
@@ -526,6 +532,9 @@ def deleteCategory(categoryName):
                 url_for(
                     'allCategories',
                     user_id=categoryToDel.user_id))  # redirecting the user
+        flash("""Delete Operation failed! Your are not the creator of \'{}\'
+        category""".format(categoryName))
+        return redirect(url_for('index'))
 
     # if the request is a GET
     if request.method == 'GET':
@@ -640,33 +649,39 @@ def editItem(categoryName, itemName):
     # if the request is a POST
     if request.method == 'POST':
 
-        # storing the form values
-        formItemName = request.form['name']
-        formItemDescription = request.form['description']
+        if fetchedCategoryName.user_id == current_user.id:
+            # storing the form values
+            formItemName = request.form['name']
+            formItemDescription = request.form['description']
 
-        # check if the form was not empty
-        if formItemName and formItemDescription is not '':
-            # fetching a single category from the db
-            # and storing it in an object
-            fetchedSingleItem = session.query(Items).filter_by(
-                name=itemName).one()
+            # check if the form was not empty
+            if formItemName and formItemDescription is not '':
+                # fetching a single category from the db
+                # and storing it in an object
+                fetchedSingleItem = session.query(Items).filter_by(
+                    name=itemName).one()
 
-            # fetching the id of that fetchedSingleItem
-            fetchedItem = session.query(Items).filter_by(
-                id=fetchedSingleItem.id).one()
+                # fetching the id of that fetchedSingleItem
+                fetchedItem = session.query(Items).filter_by(
+                    id=fetchedSingleItem.id).one()
 
-            # assign the new name to fetchedItem
-            fetchedItem.name = formItemName
-            fetchedItem.description = formItemDescription
-            session.add(fetchedItem)  # saving the new category name
-            session.commit()
-            # flashing a successful message
-            flash('Item \'{}\' updated'.format(itemName))
-            # redirecting the user
-            return redirect(url_for('allItems', categoryName=categoryName))
+                # assign the new name to fetchedItem
+                fetchedItem.name = formItemName
+                fetchedItem.description = formItemDescription
+                session.add(fetchedItem)  # saving the new category name
+                session.commit()
+                # flashing a successful message
+                flash('Item \'{}\' updated'.format(itemName))
+                # redirecting the user
+                return redirect(url_for('allItems', categoryName=categoryName))
 
-        else:
-            flash('an item name, description and category name is required')
+            else:
+                flash(
+                    'an item name, description and category name is required')
+        flash(
+            '''Edit Operation failed! Your are not the creator
+            of item \'{}\''''.format(itemName))
+        return redirect(url_for('index'))
 
     # if the request is a GET
     if request.method == 'GET':
@@ -703,10 +718,14 @@ def deleteItem(categoryName, itemName):
 
     # check if the request was a POST
     if request.method == 'POST':
-        session.delete(itemToDel)  # staging the item to delete
-        session.commit()  # commiting the query
-        flash("Item \'{}\' deleted successfully".format(itemToDel.name))
-        return redirect(url_for('allItems', categoryName=categoryName))
+        if fetchedCategoryName.user_id == current_user.id:
+            session.delete(itemToDel)  # staging the item to delete
+            session.commit()  # commiting the query
+            flash("Item \'{}\' deleted successfully".format(itemToDel.name))
+            return redirect(url_for('allItems', categoryName=categoryName))
+        flash("""Delete Operation failed! Your are not the
+        creator of item \'{}\'""".format(itemName))
+        return redirect(url_for('index'))
 
     # if the request is a GET
     if request.method == 'GET':

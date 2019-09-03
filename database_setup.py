@@ -3,11 +3,16 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
+from itsdangerous import(
+    TimedJSONWebSignatureSerializer as Serializer,
+    BadSignature,
+    SignatureExpired)
 
 Base = declarative_base()
-    
+
 # User Class
+
+
 class User(Base, UserMixin):
     """This is the User schema class"""
     __tablename__ = "users"
@@ -18,7 +23,7 @@ class User(Base, UserMixin):
     hash_password = Column(String(64))
 
     # constructor
-    def __init__(self, username,email,password):
+    def __init__(self, username, email, password):
         self.username = username
         self.email = email
         self.hash_password = generate_password_hash(password)
@@ -26,8 +31,10 @@ class User(Base, UserMixin):
     # verify password function
     def verify_password(self, password):
         return check_password_hash(self.hash_password, password)
-   
+
 # Category Class
+
+
 class Category(Base):
     """This is the Category schema class"""
     __tablename__ = "categories"
@@ -39,13 +46,15 @@ class Category(Base):
 
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-           'id': self.id,
-           'name': self.name
-       }
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'name': self.name
+        }
 
 # Items Class
+
+
 class Items(Base):
     """This is the Items schema class"""
     __tablename__ = "items"
@@ -54,19 +63,19 @@ class Items(Base):
     name = Column(String(250), nullable=False)
     description = Column(String(250), nullable=False)
     category_id = Column(Integer, ForeignKey('categories.id'))
-    category = relationship(Category)
+    category = relationship(Category, cascade="save-update")
 
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-           'id': self.id,
-           'name': self.name,
-           'description': self.description,  
-           'category': self.category_id
-       }
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'category': self.category_id
+        }
+
 
 engine = create_engine('sqlite:///catalog.db?check_same_thread=False')
- 
-Base.metadata.create_all(engine)
 
+Base.metadata.create_all(engine)
