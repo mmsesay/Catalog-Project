@@ -168,15 +168,24 @@ def index():
 
 def createUser(login_session):
     """This function creates a user and save the login session."""
-    # creating a new user
-    newUser = User(
-        username=login_session['username'],
-        email=login_session['email'],
-        password=login_session['password'])
-    session.add(newUser)
-    session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).first()
-    login_user(user)
+    
+    try:
+        # creating a new user
+        newUser = User(
+            username=login_session['username'],
+            email=login_session['email'],
+            password=login_session['password'])
+        session.add(newUser)
+        session.commit()
+        user = session.query(User).filter_by(email=login_session['email']).first()
+        login_user(user)
+    except:
+        session.rollback()
+        raise
+    finally:
+        pass
+        # session.close()  optional, depends on use case
+    
 
     return user.id
 
@@ -221,18 +230,24 @@ def register():
             if session.query(User).filter_by(email=email).first() is None:
 
                 # check the password length
-                if len(password) > 6:
+                if len(password) >= 6:
 
-                    # storing the User data to an object
-                    user = User(
-                        username=username,
-                        email=email,
-                        password=password)
-                    session.add(user)  # adding the object
-                    session.commit()  # saving the object to the database
-                    # flashing a successful message
-                    flash('Thanks for signing up. Please login')
-                    return redirect(url_for('login'))  # redirecting the user
+                    try:
+                        # storing the User data to an object
+                        user = User(
+                            username=username,
+                            email=email,
+                            password=password)
+                        session.add(user)  # adding the object
+                        session.commit()  # saving the object to the database
+                        # flashing a successful message
+                        flash('Thanks for signing up. Please login')
+                        return redirect(url_for('login'))  # redirecting the user
+                    except:
+                        session.rollback()
+                        raise
+                    finally:
+                        pass
 
                 else:
                     # throw error message if a password length is less than 6
@@ -398,18 +413,23 @@ def createCategory():
             # check if object was an empty array
             if fetchedCategoryName is None:
 
-                # fetching the current logged in user id
-                user_id = current_user.id
+                try:
 
-                # storing the category name and the user_id
-                category = Category(name=inputtedName, user_id=user_id)
-                session.add(category)  # adding the query
-                session.commit()  # executing the query
-                flash('new category added')  # flashing a successful message
-                return redirect(
-                    url_for(
-                        'allCategories',
-                        user_id=user_id))  # redirecting the user
+                    # fetching the current logged in user id
+                    user_id = current_user.id
+
+                    # storing the category name and the user_id
+                    category = Category(name=inputtedName, user_id=user_id)
+                    session.add(category)  # adding the query
+                    session.commit()  # executing the query
+                    flash('new category added')  # flashing a successful message
+                    return redirect(
+                        url_for(
+                            'allCategories',
+                            user_id=user_id))  # redirecting the user
+                except:
+                    session.rollback()
+                    raise
 
             else:
                 # check for category name match
@@ -467,19 +487,24 @@ def editCategory(categoryName):
                     # check if object name didn't match the form input name
                     if category.name != request.form['name']:
 
-                        # assign the new name to fetchedCategory
-                        category.name = request.form['name']
-                        session.add(category)  # saving the new category name
-                        session.commit()
-                        # flashing a successful message
-                        flash(
-                            'Category \'{}\' updated to \'{}\''.format(
-                                categoryName, request.form['name']))
-                        # redirecting the user
-                        return redirect(
-                            url_for(
-                                'allCategories',
-                                user_id=category.user_id))
+                        try:
+
+                            # assign the new name to fetchedCategory
+                            category.name = request.form['name']
+                            session.add(category)  # saving the new category name
+                            session.commit()
+                            # flashing a successful message
+                            flash(
+                                'Category \'{}\' updated to \'{}\''.format(
+                                    categoryName, request.form['name']))
+                            # redirecting the user
+                            return redirect(
+                                url_for(
+                                    'allCategories',
+                                    user_id=category.user_id))
+                        except:
+                            session.rollback()
+                            raise
                 else:
                     flash(
                         'Sorry \'{}\' category is already existing.'
@@ -523,15 +548,22 @@ def deleteCategory(categoryName):
 
         # check if the logged in user is the creator of this category
         if fetchedCategoryName.user_id == current_user.id:
-            session.delete(categoryToDel)
-            session.commit()
-            flash(
-                "Category \'{}\' deleted successfully".format(
-                    categoryToDel.name))
-            return redirect(
-                url_for(
-                    'allCategories',
-                    user_id=categoryToDel.user_id))  # redirecting the user
+
+            try:
+
+                session.delete(categoryToDel)
+                session.commit()
+                flash(
+                    "Category \'{}\' deleted successfully".format(
+                        categoryToDel.name))
+                return redirect(
+                    url_for(
+                        'allCategories',
+                        user_id=categoryToDel.user_id))  # redirecting the user
+            except:
+                session.rollback()
+                raise
+
         flash("""Delete Operation failed! Your are not the creator of \'{}\'
         category""".format(categoryName))
         return redirect(url_for('index'))
@@ -592,19 +624,24 @@ def createItem(categoryName):
             # check if object name doesn't match the form name
             if fetchedItem is None:
 
-                # storing the item_name, item_description and the category_id
-                item = Items(
-                    name=itemName,
-                    description=itemDescription,
-                    category_id=fetchedCategory.id)
-                session.add(item)  # adding the query
-                session.commit()  # executing the query
-                # flashing a successful message
-                flash('New item \" {} \" added'.format(item.name))
-                return redirect(
-                    url_for(
-                        'allItems',
-                        categoryName=categoryName))  # redirecting the user
+                try:
+
+                    # storing the item_name, item_description and the category_id
+                    item = Items(
+                        name=itemName,
+                        description=itemDescription,
+                        category_id=fetchedCategory.id)
+                    session.add(item)  # adding the query
+                    session.commit()  # executing the query
+                    # flashing a successful message
+                    flash('New item \" {} \" added'.format(item.name))
+                    return redirect(
+                        url_for(
+                            'allItems',
+                            categoryName=categoryName))  # redirecting the user
+                except:
+                    session.rollback()
+                    raise
 
             else:
                 flash(
@@ -656,25 +693,29 @@ def editItem(categoryName, itemName):
 
             # check if the form was not empty
             if formItemName and formItemDescription is not '':
-                # fetching a single category from the db
-                # and storing it in an object
-                fetchedSingleItem = session.query(Items).filter_by(
-                    name=itemName).one()
 
-                # fetching the id of that fetchedSingleItem
-                fetchedItem = session.query(Items).filter_by(
-                    id=fetchedSingleItem.id).one()
+                try:
+                    # fetching a single category from the db
+                    # and storing it in an object
+                    fetchedSingleItem = session.query(Items).filter_by(
+                        name=itemName).one()
 
-                # assign the new name to fetchedItem
-                fetchedItem.name = formItemName
-                fetchedItem.description = formItemDescription
-                session.add(fetchedItem)  # saving the new category name
-                session.commit()
-                # flashing a successful message
-                flash('Item \'{}\' updated'.format(itemName))
-                # redirecting the user
-                return redirect(url_for('allItems', categoryName=categoryName))
+                    # fetching the id of that fetchedSingleItem
+                    fetchedItem = session.query(Items).filter_by(
+                        id=fetchedSingleItem.id).one()
 
+                    # assign the new name to fetchedItem
+                    fetchedItem.name = formItemName
+                    fetchedItem.description = formItemDescription
+                    session.add(fetchedItem)  # saving the new category name
+                    session.commit()
+                    # flashing a successful message
+                    flash('Item \'{}\' updated'.format(itemName))
+                    # redirecting the user
+                    return redirect(url_for('allItems', categoryName=categoryName))
+                except:
+                    session.rollback()
+                    raise
             else:
                 flash(
                     'an item name, description and category name is required')
@@ -719,10 +760,14 @@ def deleteItem(categoryName, itemName):
     # check if the request was a POST
     if request.method == 'POST':
         if fetchedCategoryName.user_id == current_user.id:
-            session.delete(itemToDel)  # staging the item to delete
-            session.commit()  # commiting the query
-            flash("Item \'{}\' deleted successfully".format(itemToDel.name))
-            return redirect(url_for('allItems', categoryName=categoryName))
+            try:
+                session.delete(itemToDel)  # staging the item to delete
+                session.commit()  # commiting the query
+                flash("Item \'{}\' deleted successfully".format(itemToDel.name))
+                return redirect(url_for('allItems', categoryName=categoryName))
+            except:
+                session.rollback()
+                raise
         flash("""Delete Operation failed! Your are not the
         creator of item \'{}\'""".format(itemName))
         return redirect(url_for('index'))
