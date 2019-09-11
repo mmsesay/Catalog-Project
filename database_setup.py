@@ -20,7 +20,7 @@ class User(Base, UserMixin):
     id = Column(Integer, primary_key=True)
     username = Column(String(250), nullable=False)
     email = Column(String(250), nullable=False)
-    hash_password = Column(String(64))
+    hash_password = Column(String(250))
 
     # constructor
     def __init__(self, username, email, password):
